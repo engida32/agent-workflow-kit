@@ -19,6 +19,9 @@ when you reach the step that needs it.
    - **Missing and nothing exists** -> NEW work. Continue below.
 2. If the runtime in `runtime/` is available and the user wants it, use it (see `README.md`). Otherwise do the same
    steps by hand with the files in `templates/`. The protocol is the same either way.
+3. If `BRIEF.md` exists at the workspace root, read it before routing. It is the task source.
+   Derive criteria from its success signals and constraints, and do not re-ask answered
+   questions. Record the assumptions you carry into `criteria.json`.
 
 ## The loop
 
