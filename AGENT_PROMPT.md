@@ -5,6 +5,18 @@ Replace the text in <angle brackets>.
 
 ---
 
+## Prompt 0 - start a new project (brief before workflow)
+
+```
+Use the promptify skill in kickoff mode on: <raw idea>
+
+When I approve the brief, continue under the "agent-workflow" skill in <path-to-kit>/skill.
+Use BRIEF.md as the task source and follow Prompt A from step 1. Do not re-ask questions the
+brief already answers. Show me the assumptions you are carrying into the criteria.
+```
+
+---
+
 ## Prompt A - start new work
 
 ```

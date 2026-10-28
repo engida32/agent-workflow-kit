@@ -34,6 +34,14 @@ cp -R skill ~/.config/opencode/skills/agent-workflow
 
 Then hand the agent `AGENT_PROMPT.md` and point it at the copied `SKILL.md`.
 
+### Starting a new project
+
+Use the promptify skill first, or write `BRIEF.md` by hand, then start the workflow with the
+brief as the task source. The brief records the goal, users, success signals, non-goals,
+constraints and assumptions. The workflow turns those into acceptance criteria; it should not
+re-ask what the brief already answers. Keep `BRIEF.md` at the workspace root, not in `.wf/`,
+so both the skill and the runtime can see it. `skill/templates/brief.md` is the template.
+
 ## What it does
 
 route -> criteria (you confirm) -> plan -> work -> independent verify -> fix by failure cause -> done

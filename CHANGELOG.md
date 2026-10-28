@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-10-28
+
+### Added
+
+- Documented a brief-first kickoff path for new projects (`BRIEF.md`).
+- Added `skill/templates/brief.md` and `AGENT_PROMPT.md` Prompt 0.
+
 ## [0.1.1] - 2026-10-28
 
 ### Fixed
