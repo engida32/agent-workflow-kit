@@ -52,7 +52,7 @@ def write_call(i=1):
 def make(ws, executor, brain, retries=1):
     res = lambda ps: Resilient(ps, retries=retries, sleep=lambda s: None)  # noqa: E731
     roles = {"router": res([brain]), "planner": res([brain]), "verifier": res([brain]), "executor": res(executor)}
-    return Engine(ws, {}, roles, SKILLS, approve="deny", confirm="auto")
+    return Engine(ws, {}, roles, SKILLS, approve="auto", confirm="auto")
 
 
 class Resilience(unittest.TestCase):

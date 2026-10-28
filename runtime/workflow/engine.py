@@ -58,6 +58,10 @@ class ContextTooLarge(Exception):
     pass
 
 
+class ApprovalDenied(Exception):
+    pass
+
+
 def parse_json(text):
     dec = json.JSONDecoder()
     for i, ch in enumerate(text):
@@ -196,6 +200,8 @@ class Engine:
                 self.hold("paused", "interrupted. Progress is saved; run resume to continue.")
             except BudgetExceeded as e:
                 self.finish("budget_exceeded", str(e))
+            except ApprovalDenied as e:
+                self.hold("needs_human", str(e))
             except Fatal as e:
                 self.finish("failed", str(e))
             finally:
@@ -396,6 +402,10 @@ class Engine:
                 if any(re.search(d, c["command"]) for d in DENY):
                     raise Fatal(f"verification command for criterion {c['id']} matches the safety deny list; "
                                 "edit the criteria before resuming")
+                if not self.tools.approved(f"verification command for {c['id']}: {c['command']}"):
+                    raise ApprovalDenied(
+                        f"verification command for criterion {c['id']} was not approved. "
+                        "Review .wf/criteria.json, then approve it in a terminal or resume with --approve auto.")
                 try:
                     p = subprocess.run(c["command"], shell=True, cwd=self.store.ws, capture_output=True, text=True,
                                        timeout=self.tools.cmd_timeout, env=scrubbed_env())
@@ -448,7 +458,6 @@ class Engine:
         st["round"] += 1
         self.store.delete("transcript.json")
         if stage == "criteria":
-            self.advance("work")
             return self.hold("needs_human", "the verifier says a criterion is ambiguous; edit .wf/criteria.json, then resume")
         if stage == "research":
             self.store.delete("research_transcript.json")
