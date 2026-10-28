@@ -130,6 +130,12 @@ verifier verdict normalization, the executable-criteria deny list and malformed 
 The full list, including terminal `failed` runs, ungated verification commands, and
 `fetch_url` redirect handling, is in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md).
 
+## Design notes
+
+The loop was checked against Anthropic's and OpenAI's published guidance. The
+sources, the points they agree and disagree on, and the changes that followed
+are in [`docs/agentic-loop-research.md`](docs/agentic-loop-research.md).
+
 ## Contributing
 
 Bug reports and focused pull requests are welcome. Read
