@@ -6,6 +6,7 @@ Ctrl-C costs at most the turn in flight. Each round starts from a fresh context 
 run can continue on a different model.
 """
 import json
+import re
 import signal
 import subprocess
 import sys
@@ -14,7 +15,7 @@ from collections import Counter
 
 from .providers import Disruption, Fatal
 from .state import Store
-from .tools import SPECS, Tools, scrubbed_env
+from .tools import DENY, SPECS, Tools, iter_files, scrubbed_env
 
 PROFILES = {
     "coding": "Plan briefly, implement in small files, run it, fix failures. Research only if something is unfamiliar.",
@@ -322,18 +323,25 @@ class Engine:
     # ------------------------------------------------------------ verify
     def snapshot(self, limit=30000):
         parts = []
-        for f in sorted(self.store.ws.rglob("*")):
-            if f.is_file() and ".wf" not in f.parts and "__pycache__" not in f.parts:
-                parts.append(f"--- {f.relative_to(self.store.ws)} ---\n{f.read_text(errors='replace')[:6000]}")
+        for f in iter_files(self.store.ws):
+            try:
+                with f.open("r", encoding="utf-8", errors="replace") as fh:
+                    text = fh.read(6000)
+            except (OSError, ValueError):
+                continue
+            parts.append(f"--- {f.relative_to(self.store.ws)} ---\n{text}")
         return "\n".join(parts)[:limit]
 
     def verify(self, criteria):
         results, rubric = [], []
         for c in criteria:
             if c["kind"] == "exec":
+                if any(re.search(d, c["command"]) for d in DENY):
+                    raise Fatal(f"verification command for criterion {c['id']} matches the safety deny list; "
+                                "edit the criteria before resuming")
                 try:
                     p = subprocess.run(c["command"], shell=True, cwd=self.store.ws, capture_output=True, text=True,
-                                       timeout=120, env=scrubbed_env())
+                                       timeout=self.tools.cmd_timeout, env=scrubbed_env())
                     ok, why = p.returncode == 0, (p.stdout + p.stderr)[-500:]
                 except Exception as e:
                     ok, why = False, str(e)
@@ -344,9 +352,14 @@ class Engine:
         if rubric:
             judged = self.ask_json("verifier", VERIFIER_PROMPT, f"Task:\n{self.state['task']}\n\nCriteria:\n"
                                    f"{json.dumps(rubric, indent=1)}\n\nDeliverables:\n{self.snapshot()}")
-            judged = {j.get("id"): j for j in judged} if isinstance(judged, list) else {}
+            if isinstance(judged, dict):
+                for key in ("results", "criteria", "items", "checks"):
+                    if isinstance(judged.get(key), list):
+                        judged = judged[key]
+                        break
+            judged = {str(j.get("id")): j for j in judged if isinstance(j, dict)} if isinstance(judged, list) else {}
             for c in rubric:
-                j = judged.get(c["id"], {"passed": False, "reason": "not judged", "failure_stage": "implement"})
+                j = judged.get(str(c["id"]), {"passed": False, "reason": "not judged", "failure_stage": "implement"})
                 results.append({"id": c["id"], "must": c["must"], "passed": bool(j.get("passed")),
                                 "reason": j.get("reason", ""), "failure_stage": j.get("failure_stage")})
         return results

@@ -11,6 +11,16 @@ import urllib.request
 
 DENY = [r"\brm\s+-rf\s+/(\s|$)", r"\bmkfs\b", r":\(\)\s*\{", r"\b(shutdown|reboot)\b", r"curl[^|]*\|\s*(ba)?sh"]
 MAX_OUT = 6000
+SKIP_DIRS = {".git", ".wf", "__pycache__", ".venv", "venv", "node_modules", ".mypy_cache",
+             ".pytest_cache", ".ruff_cache", ".tox", ".nox", ".idea"}
+
+
+def iter_files(root):
+    """Deliverable files under root, skipping VCS, virtualenv and cache directories."""
+    root = pathlib.Path(root)
+    for p in sorted(root.rglob("*")):
+        if p.is_file() and not any(part in SKIP_DIRS for part in p.relative_to(root).parts):
+            yield p
 
 
 def scrubbed_env():
@@ -80,8 +90,7 @@ class Tools:
             sorted(x.stem for x in self.skills.glob("*.md")))
 
     def t_list_files(self):
-        return "\n".join(str(p.relative_to(self.ws)) for p in sorted(self.ws.rglob("*"))
-                         if p.is_file() and ".wf" not in p.parts and "__pycache__" not in p.parts) or "(empty)"
+        return "\n".join(str(p.relative_to(self.ws)) for p in iter_files(self.ws)) or "(empty)"
 
     def t_read_file(self, path):
         return self.safe_path(path).read_text(errors="replace")

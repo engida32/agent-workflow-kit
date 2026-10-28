@@ -3,15 +3,37 @@ import argparse
 import json
 import os
 import pathlib
+import site
 import sys
+import sysconfig
 
+from . import __version__
 from .engine import Engine, TERMINAL
 from .providers import Resilient, build_provider
 from .state import Locked, Store
 
-KIT = pathlib.Path(__file__).resolve().parents[2]
-SKILLS = KIT / "skill" / "task-skills"
 ROLES = ("router", "planner", "executor", "verifier")
+
+
+def task_skills_dir():
+    """Locate the packaged task skills in a source checkout or an installed wheel."""
+    env = os.getenv("WF_TASK_SKILLS_DIR")
+    if env:
+        return pathlib.Path(env).expanduser()
+    here = pathlib.Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "skill" / "task-skills",
+        pathlib.Path(sysconfig.get_path("data")) / "share" / "agent-workflow" / "task-skills",
+    ]
+    if site.USER_BASE:
+        candidates.append(pathlib.Path(site.USER_BASE) / "share" / "agent-workflow" / "task-skills")
+    for c in candidates:
+        if c.is_dir():
+            return c
+    return candidates[0]
+
+
+SKILLS = task_skills_dir()
 
 
 def default_config():
@@ -37,7 +59,12 @@ def make_engine(workspace, args):
     roles = {}
     for r in ROLES:
         names = cfg.get("roles", {}).get(r) or list(provs)
-        roles[r] = Resilient([provs[n] for n in names], res.get("max_retries", 5), res.get("base_delay", 2),
+        try:
+            chain = [provs[n] for n in names]
+        except KeyError as e:
+            raise ValueError(f"role {r!r} names unknown provider {e.args[0]!r}; "
+                             f"known providers: {', '.join(sorted(provs))}") from None
+        roles[r] = Resilient(chain, res.get("max_retries", 5), res.get("base_delay", 2),
                              res.get("max_delay", 60), res.get("outage_wait_seconds", 0), log=log)
     return Engine(workspace, cfg, roles, SKILLS, approve=args.approve, confirm=args.confirm)
 
@@ -48,6 +75,7 @@ def code(summary):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="workflow")
+    ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def common(p):
@@ -78,8 +106,8 @@ def main(argv=None):
     try:
         if a.cmd == "status":
             st = Store(a.workspace).read("state.json") if (pathlib.Path(a.workspace) / ".wf").exists() else None
-            print(json.dumps({k: st[k] for k in ("status", "reason", "stage", "round", "profile", "tokens",
-                                                 "elapsed", "failed")} if st else {"status": "no run here"}, indent=1))
+            keys = ("status", "reason", "stage", "round", "profile", "tokens", "elapsed", "failed")
+            print(json.dumps({k: st.get(k) for k in keys} if st else {"status": "no run here"}, indent=1))
             return 0
         if a.cmd == "run":
             crit = json.load(open(a.criteria)) if a.criteria else None
@@ -95,6 +123,9 @@ def main(argv=None):
         return code(s)
     except Locked as ex:
         print(f"locked: {ex}", file=sys.stderr)
+        return 2
+    except (ValueError, KeyError, OSError, json.JSONDecodeError) as e:
+        print(f"error: {e}", file=sys.stderr)
         return 2
 
 
