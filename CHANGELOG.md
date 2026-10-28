@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-28
+
+### Added
+
+- An optional research stage before planning. It runs for the `research` profile
+  and when the verifier reports missing knowledge. It writes `research.md` and
+  `research_transcript.json` and does not build the deliverable.
+- Failure-stage recovery that matches the protocol: a plan failure deletes the
+  plan and replans with feedback, a research failure deletes the plan and
+  research transcript, researches the gap and replans, and a criteria failure
+  pauses for a human.
+- Research notes in the planner and work prompts, and previous-round feedback in
+  the planner prompt.
+- `docs/agentic-loop-research.md`, a source-backed review of the loop against
+  Anthropic and OpenAI guidance, and a README rewritten for setup and operation.
+
+### Fixed
+
+- Research notes are read from the workspace root, where the research agent
+  writes `research.md`, not from the `.wf` state store.
+- Unknown verifier failure stages are normalized to implementation work.
+
+### Changed
+
+- The skill, protocols and research task skill now describe the research stage
+  and the real recovery routing. The task skill writes `research.md`.
+- The test suite is 28 offline tests, including research-before-plan and
+  plan/research recovery.
+
 ## [0.1.2] - 2026-10-28
 
 ### Added
