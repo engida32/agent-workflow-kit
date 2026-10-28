@@ -94,9 +94,8 @@ different model. The agent reads one protocol at a time and saves state after ev
 ## Start a new project
 
 A vague idea should become a brief before it becomes autonomous work. The kit does not bundle a briefing skill, but it
-works with one. promptify is a local skill used during development: invoke it with the idea, and it turns the idea into
-a short `BRIEF.md` after a bounded set of questions, before any code is written. If promptify is not installed, write
-the brief by hand.
+works with [promptify](https://github.com/engida32/promptify-skill): it turns a raw idea into a short `BRIEF.md` after a
+bounded set of questions, before any code is written. If promptify is not installed, write the brief by hand.
 
 The handoff is explicit:
 
