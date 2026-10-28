@@ -1,0 +1,234 @@
+[
+ {
+  "id": "code-fizzbuzz",
+  "profile": "coding",
+  "task": "Write fizzbuzz.py with a function fizzbuzz(n) returning 'Fizz', 'Buzz', 'FizzBuzz' or str(n).",
+  "criteria": [
+   {
+    "id": "c1",
+    "text": "fizzbuzz behaves correctly",
+    "kind": "exec",
+    "must": true,
+    "command": "python3 -c \"from fizzbuzz import fizzbuzz as f; assert f(15)=='FizzBuzz' and f(3)=='Fizz' and f(5)=='Buzz' and f(7)=='7'\""
+   }
+  ]
+ },
+ {
+  "id": "code-slugify",
+  "profile": "coding",
+  "task": "Write slugify.py with slugify(s): lowercase, replace each run of non-alphanumeric characters with a single '-', strip leading/trailing '-'.",
+  "criteria": [
+   {
+    "id": "c1",
+    "text": "basic cases",
+    "kind": "exec",
+    "must": true,
+    "command": "python3 -c \"from slugify import slugify as s; assert s('Hello, World!')=='hello-world'; assert s('  A  b ')=='a-b'; assert s('---')==''\""
+   }
+  ]
+ },
+ {
+  "id": "code-lru",
+  "profile": "coding",
+  "task": "Write lru.py with class LRUCache(capacity) having get(key) (returns -1 if missing) and put(key, value), evicting the least recently used entry.",
+  "criteria": [
+   {
+    "id": "c1",
+    "text": "eviction order correct",
+    "kind": "exec",
+    "must": true,
+    "command": "python3 -c \"from lru import LRUCache as L; c=L(2); c.put(1,1); c.put(2,2); c.get(1); c.put(3,3); assert c.get(2)==-1 and c.get(1)==1 and c.get(3)==3\""
+   }
+  ]
+ },
+ {
+  "id": "research-vector-db",
+  "profile": "research",
+  "task": "Compare three widely used open-source vector databases for a 5M-document RAG system. Write report.md.",
+  "criteria": [
+   {
+    "id": "r1",
+    "text": "Compares at least three named systems on the same dimensions",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r2",
+    "text": "Every factual claim names a source",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r3",
+    "text": "Ends with a clear recommendation and stated assumptions",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r4",
+    "text": "Notes uncertainty or conflicting information where it exists",
+    "kind": "rubric",
+    "must": false
+   }
+  ]
+ },
+ {
+  "id": "research-ev-battery",
+  "profile": "research",
+  "task": "Summarize the current state of solid-state EV batteries: who is closest to production and what the main obstacles are. Write report.md.",
+  "criteria": [
+   {
+    "id": "r1",
+    "text": "Names specific companies and their stated timelines",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r2",
+    "text": "Distinguishes announced plans from shipped products",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r3",
+    "text": "Sources are named and recent",
+    "kind": "rubric",
+    "must": true
+   }
+  ]
+ },
+ {
+  "id": "research-paper",
+  "profile": "research",
+  "task": "Explain what retrieval-augmented generation is and its three most common failure modes, for an engineer new to the topic. Write report.md.",
+  "criteria": [
+   {
+    "id": "r1",
+    "text": "Definition is correct and concise",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r2",
+    "text": "Exactly three failure modes, each with a mitigation",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "r3",
+    "text": "Includes at least two named sources",
+    "kind": "rubric",
+    "must": true
+   }
+  ]
+ },
+ {
+  "id": "design-api",
+  "profile": "design",
+  "task": "Design a REST API for a library book-lending system. Write api_design.md.",
+  "criteria": [
+   {
+    "id": "d1",
+    "text": "Lists resources and endpoints with methods",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "d2",
+    "text": "Defines auth and error handling",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "d3",
+    "text": "States at least two key decisions with rejected alternatives",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "d4",
+    "text": "File exists",
+    "kind": "exec",
+    "must": true,
+    "command": "test -s api_design.md"
+   }
+  ]
+ },
+ {
+  "id": "design-landing",
+  "profile": "design",
+  "task": "Create index.html: a single-page wireframe landing page for a coffee subscription service with a hero, pricing section and signup form.",
+  "criteria": [
+   {
+    "id": "d1",
+    "text": "Has form and pricing text",
+    "kind": "exec",
+    "must": true,
+    "command": "grep -qi '<form' index.html && grep -qi 'pric' index.html"
+   },
+   {
+    "id": "d2",
+    "text": "Sections appear in a sensible order and the call to action is clear",
+    "kind": "rubric",
+    "must": true
+   }
+  ]
+ },
+ {
+  "id": "eval-code-review",
+  "profile": "evaluation",
+  "task": "Review this function and write review.md:\n\ndef avg(xs):\n    return sum(xs) / len(xs)\n\ndef top(xs, n):\n    xs.sort()\n    return xs[-n:]",
+  "criteria": [
+   {
+    "id": "e1",
+    "text": "Identifies the empty-list ZeroDivisionError in avg",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "e2",
+    "text": "Identifies that top mutates its input",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "e3",
+    "text": "Gives concrete corrected code",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "e4",
+    "text": "File exists",
+    "kind": "exec",
+    "must": true,
+    "command": "test -s review.md"
+   }
+  ]
+ },
+ {
+  "id": "eval-plan",
+  "profile": "evaluation",
+  "task": "Evaluate this plan and write review.md: 'Launch the app to 10,000 users on day one with no monitoring, and fix bugs as customers report them.'",
+  "criteria": [
+   {
+    "id": "e1",
+    "text": "Identifies missing monitoring and the all-at-once rollout as risks",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "e2",
+    "text": "Scores each rubric item with a reason",
+    "kind": "rubric",
+    "must": true
+   },
+   {
+    "id": "e3",
+    "text": "Proposes a prioritized, concrete alternative",
+    "kind": "rubric",
+    "must": true
+   }
+  ]
+ }
+]

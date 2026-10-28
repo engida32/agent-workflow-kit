@@ -1,0 +1,35 @@
+# Workflow runtime state (one per workspace)
+.wf/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test and type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+htmlcov/
+
+# Node (some workspaces touch JS)
+node_modules/
+
+# Eval output and local config
+eval_runs/
+runtime/config.json
+config.json
+
+# Editor and OS noise
+.idea/
+.vscode/
+.DS_Store

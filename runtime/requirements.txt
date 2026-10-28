@@ -1,0 +1,1 @@
+# No third-party dependencies. Python 3.9+ (Linux/macOS recommended; process locking uses os.kill).

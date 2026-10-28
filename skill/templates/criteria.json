@@ -1,0 +1,6 @@
+[
+  {"id": "c1", "text": "Tests pass", "kind": "exec", "must": true, "command": "python -m pytest -q"},
+  {"id": "c2", "text": "README explains how to run it", "kind": "exec", "must": true, "command": "test -s README.md"},
+  {"id": "c3", "text": "Names at least three alternatives with one trade-off each", "kind": "rubric", "must": true},
+  {"id": "c4", "text": "Tone suits the stated audience", "kind": "rubric", "must": false}
+]
