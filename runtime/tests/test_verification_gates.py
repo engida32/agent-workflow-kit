@@ -53,7 +53,7 @@ def write_call(i=1):
 def make_engine(ws, executor, brain, approve):
     res = lambda ps: Resilient(ps, retries=1, sleep=lambda s: None)  # noqa: E731
     roles = {"router": res([brain]), "planner": res([brain]), "verifier": res([brain]), "executor": res([executor])}
-    return Engine(ws, {}, roles, SKILLS, approve=approve, confirm="auto")
+    return Engine(ws, {"limits": {"verifier_votes": 1}}, roles, SKILLS, approve=approve, confirm="auto")
 
 
 def start(eng, criteria):

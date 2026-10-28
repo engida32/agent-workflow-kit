@@ -32,7 +32,7 @@ class Script(Provider):
 
 def state(ws, task="do the thing"):
     Store(ws).write("state.json", {"task": task, "tokens": 0, "providers_used": {},
-                                   "limits": {"max_tokens": 100000, "max_seconds": 7200}})
+                                   "limits": {"max_tokens": 100000, "max_seconds": 7200, "verifier_votes": 1}})
 
 
 class WorkspaceScan(unittest.TestCase):

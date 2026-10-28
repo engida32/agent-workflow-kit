@@ -15,5 +15,5 @@
   },
   "resilience": {"max_retries": 5, "base_delay": 2, "max_delay": 60, "outage_wait_seconds": 0},
   "limits": {"max_rounds": 4, "max_tokens": 600000, "max_seconds": 7200, "max_turns": 40,
-             "max_context_chars": 150000, "cmd_timeout": 120}
+             "max_context_chars": 150000, "cmd_timeout": 120, "verifier_votes": 3}
 }

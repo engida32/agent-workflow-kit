@@ -14,6 +14,13 @@ All notable changes to this project are documented here. The format follows
 - Branch protection for `main`: pull requests only, required Python and CodeQL
   checks, up-to-date branches, resolved conversations, linear history, and no
   force pushes or deletion.
+- `resume --retry-failed` revives a failed run after the cause is fixed.
+- Rubric criteria are judged three times by default and decided by majority vote,
+  configurable with `limits.verifier_votes`.
+- Verification results now record command, exit code, duration, timestamp and
+  output, plus every rubric ballot, in `verify_<round>.json`.
+- State files carry a schema version; older files are migrated on resume and
+  newer ones are rejected instead of being misread.
 
 ### Fixed
 
@@ -21,7 +28,10 @@ All notable changes to this project are documented here. The format follows
   of running the command, and `ask` prompts once per command.
 - A criteria failure now holds at the verify stage, so resuming after editing
   `.wf/criteria.json` rechecks the edited criteria instead of rerunning work.
-- The test suite is 32 offline tests, including both regressions above.
+- Eval reruns now skip a task whose prior run is terminal, including `failed`,
+  instead of failing while setting up the skipped run.
+- The test suite is 40 offline tests, including the regressions above and the
+  new reliability coverage.
 
 ## [0.2.0] - 2026-10-28
 

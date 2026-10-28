@@ -149,8 +149,11 @@ Useful options:
 - `--criteria file.json` supplies criteria directly and skips the interactive review.
 - `--profile coding|research|design|evaluation` skips profile routing.
 - `resume --add-rounds 2 --add-tokens 200000` continues after a limit stopped the run.
+- `resume --retry-failed` retries a run that ended in `failed` after you fix the cause.
 - Set `"outage_wait_seconds": 3600` in the config's `resilience` block to keep probing during a long outage before
   pausing.
+- Set `"verifier_votes": 3` in the config's `limits` block to control independent rubric ballots. One vote disables
+  majority voting.
 
 Do not run the skill form and the runtime against the same `.wf/` at the same time. The runtime owns the lock and the
 stage transitions.
@@ -183,10 +186,11 @@ The test suite is offline and needs no API key:
 python3 -m unittest discover -s runtime/tests -v
 ```
 
-32 tests cover retries, Retry-After, provider fallback, outage pause and resume, mid-turn resume, locking, provider
+40 tests cover retries, Retry-After, provider fallback, outage pause and resume, mid-turn resume, locking, provider
 wire formats, CLI-agent wrapping, workspace scanning, verifier normalization, executable-criteria safety, verification
-approval gates, criteria re-checks after a human edit, malformed config and state, research before planning, and
-failure-stage routing back to plan or research.
+approval gates, criteria re-checks after a human edit, malformed config and state, research before planning,
+failure-stage routing back to plan or research, state-schema migration, failed-run retries, eval reruns that skip terminal runs,
+rubric majority voting, and verification evidence.
 
 CI runs the suite and an installed-command smoke test on Python 3.9 through 3.14.
 
@@ -224,7 +228,7 @@ Sources:
 - Locking uses `os.kill`, so the runtime targets Linux and macOS.
 - `fetch_url` blocks private addresses at lookup time but does not stop a redirect from a public host to a private one.
 - Rubric criteria are only as reliable as the judge. Prefer commands.
-- A run that ends in `failed` is terminal. Back up or remove `.wf/state.json` before starting again.
+- A run that ends in `failed` keeps its state for inspection. Fix the cause, then run `resume --retry-failed`.
 - Executable criteria are commands. They follow `--approve`, and the deny list applies, but an approved command still
   runs with your privileges. Review criteria before a run.
 - `--criteria` skips the interactive criteria review, even with `--confirm ask`.
