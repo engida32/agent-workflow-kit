@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/engida32/agent-workflow-kit/security/advisories/new
+    about: Report a vulnerability privately. Do not open a public issue.
+  - name: Documentation and design notes
+    url: https://github.com/engida32/agent-workflow-kit/tree/main/docs
+    about: Read the design notes before proposing a change to the loop.

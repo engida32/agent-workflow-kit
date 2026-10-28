@@ -3,6 +3,16 @@
 Thanks for picking this up. The kit is deliberately small and standard-library only,
 so the fastest way to help is to run it, break it, and send a focused pull request.
 
+## Before you start
+
+- Read [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). It applies to issues, pull
+  requests, and every other project space.
+- For a bug or a small fix, open a pull request directly.
+- For a change to the workflow stages, the verifier contract, the safety model,
+  the CLI, or the state schema, open an issue first so the design can be agreed
+  before you spend time on code.
+- `main` is protected. Every change lands through a pull request with passing CI.
+
 ## Ground rules
 
 - One change per pull request. A bug fix does not need a new feature bolted on.
@@ -41,19 +51,40 @@ python3 -m venv /tmp/awk-venv
 ## Commit and branch style
 
 Use conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `ci:`.
-Branch from `main` and open a pull request. Direct pushes to `main` are reserved for
-release commits.
+Branch from `main` and open a pull request. Direct pushes to `main` are blocked.
 
 ```bash
 git switch -c fix/short-description
 git commit -m "fix: apply the safety deny list to verification commands"
 ```
 
+Pull requests are squash merged, so the pull request title becomes the commit on
+`main`. Write it as a conventional commit, for example
+`fix: apply the safety deny list to verification commands`.
+
+## Review and merge
+
+- All six Python CI jobs and the CodeQL analysis must pass.
+- The branch must be up to date with `main` before merge.
+- Review conversations must be resolved.
+- A maintainer reviews the change. With one maintainer, an approving review is
+  not a separate merge requirement, so do not wait for a green approval tick.
+- Keep the pull request small enough to review. Split unrelated work.
+
+See [`GOVERNANCE.md`](GOVERNANCE.md) for decision making and release policy.
+
+## Reporting issues
+
+Use the issue templates. A bug report needs the version or commit, the surface
+(runtime, skill, packaging, docs), a minimal reproduction, and redacted logs. A
+feature request starts with the problem and the smallest change that would solve
+it. Blank issues are disabled so reports arrive with the details needed to act.
+
 ## Reporting security issues
 
-Do not open a public issue for a vulnerability. See `SECURITY.md` for the private
-channel and scope. The relevant surface is command execution, workspace path
-containment, secret scrubbing, and untrusted web content.
+Do not open a public issue for a vulnerability. See [`SECURITY.md`](SECURITY.md)
+for the private channel and scope. The relevant surface is command execution,
+workspace path containment, secret scrubbing, and untrusted web content.
 
 ## License
 
