@@ -144,7 +144,8 @@ Exit codes:
 Useful options:
 
 - `--confirm auto` skips the criteria review. Do not use it when you have not reviewed the criteria.
-- `--approve auto|ask|deny` controls shell commands written by the model. Use `auto` only in a sandbox.
+- `--approve auto|ask|deny` controls shell commands, including executable verification criteria. `ask` prompts once per
+  command; `deny` pauses verification instead of running it. Use `auto` only in a sandbox.
 - `--criteria file.json` supplies criteria directly and skips the interactive review.
 - `--profile coding|research|design|evaluation` skips profile routing.
 - `resume --add-rounds 2 --add-tokens 200000` continues after a limit stopped the run.
@@ -182,9 +183,10 @@ The test suite is offline and needs no API key:
 python3 -m unittest discover -s runtime/tests -v
 ```
 
-28 tests cover retries, Retry-After, provider fallback, outage pause and resume, mid-turn resume, locking, provider
-wire formats, CLI-agent wrapping, workspace scanning, verifier normalization, executable-criteria safety, malformed
-config and state, research before planning, and failure-stage routing back to plan or research.
+32 tests cover retries, Retry-After, provider fallback, outage pause and resume, mid-turn resume, locking, provider
+wire formats, CLI-agent wrapping, workspace scanning, verifier normalization, executable-criteria safety, verification
+approval gates, criteria re-checks after a human edit, malformed config and state, research before planning, and
+failure-stage routing back to plan or research.
 
 CI runs the suite and an installed-command smoke test on Python 3.9 through 3.14.
 
@@ -223,8 +225,8 @@ Sources:
 - `fetch_url` blocks private addresses at lookup time but does not stop a redirect from a public host to a private one.
 - Rubric criteria are only as reliable as the judge. Prefer commands.
 - A run that ends in `failed` is terminal. Back up or remove `.wf/state.json` before starting again.
-- Executable verification commands run even under `--approve deny`. The deny list still applies. Treat criteria as
-  executable content and review them before a run.
+- Executable criteria are commands. They follow `--approve`, and the deny list applies, but an approved command still
+  runs with your privileges. Review criteria before a run.
 - `--criteria` skips the interactive criteria review, even with `--confirm ask`.
 
 The full list is in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md).

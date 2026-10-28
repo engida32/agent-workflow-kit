@@ -18,14 +18,14 @@ including failures caused by a model returning invalid JSON twice. The state fil
 kept for inspection. To retry, either fix the cause and start a new run in a fresh
 workspace, or back up `.wf/` and delete `.wf/state.json`.
 
-## Verification commands bypass the approval gate
+## Criteria are executable content
 
-Executable criteria run their commands during verification even when `--approve` is
-`ask` or `deny`. Only the safety deny list is applied (destructive filesystem,
-partition, shutdown, fork-bomb and pipe-to-shell patterns). This is deliberate: a
-verification command that cannot run is not a verification. The consequence is that
-criteria files are executable content. Review `.wf/criteria.json` before resuming,
-especially when a model drafted it.
+Executable criteria run shell commands. They follow `--approve`: `auto` runs them,
+`ask` prompts once per command, and `deny` pauses verification. The safety deny list
+still applies (destructive filesystem, partition, shutdown, fork-bomb and
+pipe-to-shell patterns), but it is not a sandbox. An approved command runs with your
+privileges. Review `.wf/criteria.json` before a run, especially when a model drafted
+it.
 
 ## Supplied criteria skip confirmation
 
