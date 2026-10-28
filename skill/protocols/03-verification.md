@@ -18,7 +18,8 @@ Agents tend to praise their own work. Separate the maker from the checker and ma
 - The reviewer returns, per item: passed, a one-line reason, and a failure stage.
   `implement` means a defect in the work, `plan` means the approach is wrong,
   `research` means knowledge is missing, and `criteria` means the criterion itself
-  is ambiguous.
+  is ambiguous. On a criteria failure the runtime pauses at verify, so resuming
+  after the edit rechecks the new criterion instead of redoing the work.
 - For interactive things (a web page, an app), verify by using them (run them, click through) and not by reading code.
 
 ## Calibrate

@@ -25,7 +25,7 @@ Route by cause, not always back to the start:
 | A defect in the work (bug, missing section) | Work, same plan |
 | Wrong approach or incomplete plan | Plan again, with the verifier feedback |
 | Missing knowledge | Research the specific gap, then plan again |
-| Criterion ambiguous or contradictory | Ask the human |
+| Criterion ambiguous or contradictory | Ask the human, then re-verify the edited criterion |
 
 ## Loops and budgets
 - Cap rounds, tokens and wall time. Stop on **no progress** (the number of failed must-pass criteria did not drop for

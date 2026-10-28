@@ -15,6 +15,14 @@ All notable changes to this project are documented here. The format follows
   checks, up-to-date branches, resolved conversations, linear history, and no
   force pushes or deletion.
 
+### Fixed
+
+- Executable verification criteria now honor `--approve`. `deny` pauses instead
+  of running the command, and `ask` prompts once per command.
+- A criteria failure now holds at the verify stage, so resuming after editing
+  `.wf/criteria.json` rechecks the edited criteria instead of rerunning work.
+- The test suite is 32 offline tests, including both regressions above.
+
 ## [0.2.0] - 2026-10-28
 
 ### Added
