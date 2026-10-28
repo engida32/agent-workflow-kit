@@ -80,8 +80,11 @@ workflow resume workspace --config runtime/config.json
 workflow status workspace
 ```
 
-Without an install, run `python -m workflow` from `runtime/` instead. With no config
-file, it auto-detects `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY` plus `WF_OPENAI_MODEL`).
+Without an install, run `python -m workflow` from `runtime/` instead. These commands
+assume the repo root; from `runtime/`, use `--config config.json` and `-w ../workspace`.
+A wheel install ships the example config at
+`<sysconfig data>/share/agent-workflow/config.example.json`.
+With no config file, it auto-detects `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY` plus `WF_OPENAI_MODEL`).
 Exit codes: 0 passed, 75 paused (resume later), 3 needs a human, 2 other failure.
 
 Useful options: `--confirm auto` (skip the criteria review), `--approve auto|ask|deny` (shell commands; use `auto`
@@ -102,9 +105,9 @@ workflow eval eval/eval_tasks.json --out eval_runs --config runtime/config.json 
 ```
 python -m unittest discover -s runtime/tests -v
 ```
-22 tests cover backoff, Retry-After, fallback, outage pause, resume without re-planning, mid-turn resume, a crash
+25 tests cover backoff, Retry-After, fallback, outage pause, resume without re-planning, mid-turn resume, a crash
 between a model turn and its tool run, locking, provider wire formats, CLI-agent wrapping, workspace scanning,
-verifier verdict normalization, the executable-criteria deny list and CLI error handling.
+verifier verdict normalization, the executable-criteria deny list and malformed config or state handling.
 
 ## Honest limits
 
