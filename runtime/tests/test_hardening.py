@@ -119,12 +119,48 @@ class Cli(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             ws = pathlib.Path(d)
             cfg = ws / "cfg.json"
-            cfg.write_text(json.dumps({"providers": {}, "roles": {"router": ["ghost"]}}))
+            cfg.write_text(json.dumps({"providers": {"ok": {"type": "command", "command": "cat"}},
+                                       "roles": {"router": ["ghost"]}}))
             err = io.StringIO()
             with contextlib.redirect_stderr(err):
                 rc = main(["run", "task", "-w", str(ws), "--config", str(cfg)])
             self.assertEqual(rc, 2)
             self.assertIn("unknown provider 'ghost'", err.getvalue())
+
+    def test_empty_providers_is_a_clean_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            ws = pathlib.Path(d)
+            cfg = ws / "cfg.json"
+            cfg.write_text(json.dumps({"providers": {}}))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = main(["run", "task", "-w", str(ws), "--config", str(cfg)])
+            self.assertEqual(rc, 2)
+            self.assertIn("no providers configured", err.getvalue())
+            self.assertNotIn("Traceback", err.getvalue())
+
+    def test_null_provider_spec_is_a_clean_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            ws = pathlib.Path(d)
+            cfg = ws / "cfg.json"
+            cfg.write_text(json.dumps({"providers": {"x": None}}))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = main(["run", "task", "-w", str(ws), "--config", str(cfg)])
+            self.assertEqual(rc, 2)
+            self.assertIn("must be a JSON object", err.getvalue())
+            self.assertNotIn("Traceback", err.getvalue())
+
+    def test_status_rejects_non_object_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            ws = pathlib.Path(d)
+            Store(ws).write("state.json", [1])
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = main(["status", str(ws)])
+            self.assertEqual(rc, 2)
+            self.assertIn("not a JSON object", err.getvalue())
+            self.assertNotIn("Traceback", err.getvalue())
 
     def test_task_skills_resolve_from_source_checkout(self):
         self.assertEqual(task_skills_dir(), SKILLS)

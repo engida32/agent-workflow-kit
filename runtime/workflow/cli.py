@@ -44,15 +44,20 @@ def default_config():
         prov["openai"] = {"type": "openai_compat", "model": os.environ["WF_OPENAI_MODEL"],
                           "base_url": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")}
     if not prov:
-        sys.exit("No model configured. Pass --config FILE (see config.example.json) or set ANTHROPIC_API_KEY, "
-                 "or OPENAI_API_KEY with WF_OPENAI_MODEL.")
+        raise ValueError("No model configured. Pass --config FILE (see config.example.json) or set "
+                         "ANTHROPIC_API_KEY, or OPENAI_API_KEY with WF_OPENAI_MODEL.")
     names = list(prov)
     return {"providers": prov, "roles": {r: names for r in ROLES} | {"verifier": names[::-1]}}
 
 
 def make_engine(workspace, args):
     cfg = json.load(open(args.config)) if args.config else default_config()
-    provs = {n: build_provider(n, s) for n, s in cfg["providers"].items()}
+    if not isinstance(cfg, dict):
+        raise ValueError("config must be a JSON object")
+    specs = cfg.get("providers")
+    if not isinstance(specs, dict) or not specs:
+        raise ValueError("no providers configured; add a non-empty providers object to the config")
+    provs = {n: build_provider(n, s) for n, s in specs.items()}
     res = cfg.get("resilience", {})
     store = Store(workspace)
     log = lambda **k: store.journal(**k)  # noqa: E731
@@ -106,6 +111,8 @@ def main(argv=None):
     try:
         if a.cmd == "status":
             st = Store(a.workspace).read("state.json") if (pathlib.Path(a.workspace) / ".wf").exists() else None
+            if st is not None and not isinstance(st, dict):
+                raise ValueError("state.json is not a JSON object")
             keys = ("status", "reason", "stage", "round", "profile", "tokens", "elapsed", "failed")
             print(json.dumps({k: st.get(k) for k in keys} if st else {"status": "no run here"}, indent=1))
             return 0
@@ -136,6 +143,8 @@ def run_eval(a):
     for t in json.load(open(a.file)):
         ws = out / t["id"]
         prior = Store(ws).read("state.json") if ws.exists() else None
+        if not isinstance(prior, dict):
+            prior = None
         eng = make_engine(ws, a)
         eng.start(t["task"], t.get("profile"), t["criteria"])
         s = eng.run() if not prior or prior["status"] not in TERMINAL else eng.summary()
