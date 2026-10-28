@@ -10,6 +10,30 @@ forms that follow the same protocol:
 
 Start with `AGENT_PROMPT.md`.
 
+## Install
+
+The runtime has no third-party dependencies (Python 3.9+).
+
+```bash
+# from a checkout
+python3 -m venv .venv && . .venv/bin/activate
+pip install .
+
+# or straight from GitHub
+pip install "git+https://github.com/engida32/agent-workflow-kit.git"
+
+workflow --version
+```
+
+The skill form needs no install. Copy the `skill/` directory into your agent's skills
+folder, for example:
+
+```bash
+cp -R skill ~/.config/opencode/skills/agent-workflow
+```
+
+Then hand the agent `AGENT_PROMPT.md` and point it at the copied `SKILL.md`.
+
 ## What it does
 
 route -> criteria (you confirm) -> plan -> work -> independent verify -> fix by failure cause -> done
@@ -50,13 +74,14 @@ Anthropic's engineering posts on harnesses for long-running agents ("Effective h
 ```
 cp runtime/config.example.json runtime/config.json      # edit models, keys come from env vars
 export ANTHROPIC_API_KEY=...                            # and/or OPENAI_API_KEY=...
-cd runtime
-python -m workflow run "Write slugify.py ..." -w ../workspace --config config.json
+workflow run "Write slugify.py ..." -w workspace --config runtime/config.json
 # interrupted, rate limited, or provider down?
-python -m workflow resume ../workspace --config config.json
+workflow resume workspace --config runtime/config.json
+workflow status workspace
 ```
 
-With no config file, it auto-detects `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY` plus `WF_OPENAI_MODEL`).
+Without an install, run `python -m workflow` from `runtime/` instead. With no config
+file, it auto-detects `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY` plus `WF_OPENAI_MODEL`).
 Exit codes: 0 passed, 75 paused (resume later), 3 needs a human, 2 other failure.
 
 Useful options: `--confirm auto` (skip the criteria review), `--approve auto|ask|deny` (shell commands; use `auto`
@@ -67,7 +92,7 @@ For long outages set `"outage_wait_seconds": 3600` in `resilience` and the run k
 ## Eval
 
 ```
-python -m workflow eval ../eval/eval_tasks.json --out ../eval_runs --config config.json --confirm auto --approve auto
+workflow eval eval/eval_tasks.json --out eval_runs --config runtime/config.json --confirm auto --approve auto
 ```
 10 tasks across the four profiles. Run before and after every change; finished tasks are skipped on re-run.
 `--approve auto` executes model-written commands, so run this inside a container.
@@ -77,8 +102,9 @@ python -m workflow eval ../eval/eval_tasks.json --out ../eval_runs --config conf
 ```
 python -m unittest discover -s runtime/tests -v
 ```
-13 tests cover backoff, Retry-After, fallback, outage pause, resume without re-planning, mid-turn resume, a crash
-between a model turn and its tool run, locking, provider wire formats and CLI-agent wrapping.
+22 tests cover backoff, Retry-After, fallback, outage pause, resume without re-planning, mid-turn resume, a crash
+between a model turn and its tool run, locking, provider wire formats, CLI-agent wrapping, workspace scanning,
+verifier verdict normalization, the executable-criteria deny list and CLI error handling.
 
 ## Honest limits
 
@@ -90,6 +116,20 @@ between a model turn and its tool run, locking, provider wire formats and CLI-ag
 - `fetch_url` blocks private addresses at lookup time but does not stop a redirect from a public host to a private one.
 - Rubric (judged) criteria are only as reliable as the judge; prefer executable criteria.
 
+The full list, including terminal `failed` runs, ungated verification commands, and
+`fetch_url` redirect handling, is in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md).
+
+## Contributing
+
+Bug reports and focused pull requests are welcome. Read
+[`CONTRIBUTING.md`](CONTRIBUTING.md) first: one change per PR, a test for every
+behaviour change, and no new runtime dependencies. Security issues go through
+[`SECURITY.md`](SECURITY.md), not the public tracker.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
+
 ## Layout
 
 ```
@@ -97,4 +137,7 @@ AGENT_PROMPT.md          prompts to hand to your agent
 skill/                   the installable skill (SKILL.md, protocols/, templates/, task-skills/)
 runtime/                 python runtime (workflow/, tests/, config.example.json)
 eval/eval_tasks.json     10-task eval set
+pyproject.toml           packaging and the `workflow` entry point
+.github/workflows/ci.yml test + install smoke test on Python 3.9-3.14
+KNOWN_ISSUES.md          intentional limits and unverified behaviour
 ```
