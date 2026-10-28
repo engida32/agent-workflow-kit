@@ -14,7 +14,8 @@ Agents tend to praise their own work. Separate the maker from the checker and ma
 - The reviewer sees only the criteria and the deliverables, never the author's reasoning or self-assessment.
 - Prefer a different model or at least a fresh session for the reviewer.
 - Tell the reviewer to be skeptical and to pass an item only when the evidence is in the files.
-- For subjective items, run the judgment two or three times and take the majority.
+- For subjective items, run the judgment two or three times and take the majority. The runtime records each ballot and
+  the command evidence in `.wf/verify_<round>.json`.
 - The reviewer returns, per item: passed, a one-line reason, and a failure stage.
   `implement` means a defect in the work, `plan` means the approach is wrong,
   `research` means knowledge is missing, and `criteria` means the criterion itself

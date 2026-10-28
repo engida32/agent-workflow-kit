@@ -11,12 +11,13 @@ small fixes on first contact with a real endpoint. If a wire-format bug bites, t
 failure is usually a `Fatal` with the provider's error text; fix the adapter and add
 a test with a recorded payload.
 
-## A `failed` run is terminal
+## A `failed` run needs an explicit retry
 
-`resume` revives `paused` and `needs_human` runs. It does not revive `failed` runs,
-including failures caused by a model returning invalid JSON twice. The state file is
-kept for inspection. To retry, either fix the cause and start a new run in a fresh
-workspace, or back up `.wf/` and delete `.wf/state.json`.
+`resume` revives `paused` and `needs_human` runs without extra flags. A `failed` run,
+including one caused by a model returning invalid JSON twice, is kept for inspection
+and needs `resume --retry-failed` after you fix the cause. The runtime does not retry
+silently, because repeating a deterministic failure burns tokens without changing the
+outcome.
 
 ## Criteria are executable content
 

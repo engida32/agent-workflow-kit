@@ -29,7 +29,8 @@ STAGE_HINTS = {
     "research": "You are missing knowledge. Research the specific gaps listed, then revise.",
 }
 DEFAULT_LIMITS = {"max_rounds": 4, "max_tokens": 600_000, "max_seconds": 7200, "max_turns": 40,
-                  "max_context_chars": 150_000}
+                  "max_context_chars": 150_000, "verifier_votes": 3}
+STATE_SCHEMA = 1
 TERMINAL = {"passed", "max_rounds", "no_progress", "budget_exceeded", "failed"}
 
 ROUTER_PROMPT = 'Classify the task. Reply with JSON only: {"profile": "coding" | "research" | "design" | "evaluation"}'
@@ -86,6 +87,17 @@ def normalize_criteria(crit):
     return out
 
 
+def normalize_verdicts(judged):
+    if isinstance(judged, dict):
+        for key in ("results", "criteria", "items", "checks"):
+            if isinstance(judged.get(key), list):
+                judged = judged[key]
+                break
+    if not isinstance(judged, list):
+        return {}
+    return {str(j.get("id")): j for j in judged if isinstance(j, dict)}
+
+
 class Engine:
     def __init__(self, workspace, cfg, providers, skills_dir, approve="ask", confirm="ask"):
         self.store = Store(workspace)
@@ -120,25 +132,36 @@ class Engine:
         self.store.journal(event="finish", status=status, reason=reason)
         self.save()
 
-    def start(self, task=None, profile=None, criteria=None, add_rounds=0, add_tokens=0):
+    def start(self, task=None, profile=None, criteria=None, add_rounds=0, add_tokens=0, retry_failed=False):
         st = self.store.read("state.json")
         if st:
             if task and st["task"] != task:
                 raise ValueError("this workspace already belongs to a different task")
             self._state = st
+            version = st.get("schema_version")
+            if version is None:
+                st["schema_version"] = STATE_SCHEMA
+                self.store.journal(event="schema_migrated", from_version=None, to_version=STATE_SCHEMA)
+            elif version > STATE_SCHEMA:
+                raise ValueError(f"state schema {version} is newer than this runtime supports ({STATE_SCHEMA})")
             st["limits"]["max_rounds"] += add_rounds
             st["limits"]["max_tokens"] += add_tokens
-            if st["status"] in ("paused", "needs_human") or (st["status"] in TERMINAL - {"passed", "failed"}
-                                                             and (add_rounds or add_tokens)):
+            if st["status"] == "failed":
+                if not retry_failed:
+                    raise ValueError("this run failed; fix the cause, then resume with --retry-failed")
+                st["status"], st["reason"] = "running", ""
+            elif st["status"] in ("paused", "needs_human") or (st["status"] in TERMINAL - {"passed", "failed"}
+                                                               and (add_rounds or add_tokens)):
                 st["status"], st["reason"] = "running", ""
             self.store.journal(event="resume", stage=st["stage"], status=st["status"])
         else:
             if not task:
                 raise ValueError("a task is required for a new run")
             lim = {**DEFAULT_LIMITS, **self.cfg.get("limits", {})}
-            self._state = {"task": task, "profile": profile, "stage": "route", "status": "running", "reason": "",
-                           "round": 1, "tokens": 0, "elapsed": 0.0, "best_failed": None, "stale": 0,
-                           "feedback": "", "failed": [], "limits": lim, "providers_used": {}}
+            self._state = {"schema_version": STATE_SCHEMA, "task": task, "profile": profile, "stage": "route",
+                           "status": "running", "reason": "", "round": 1, "tokens": 0, "elapsed": 0.0,
+                           "best_failed": None, "stale": 0, "feedback": "", "failed": [], "limits": lim,
+                           "providers_used": {}}
             if criteria:
                 self.store.write("criteria.json", normalize_criteria(criteria))
             self.store.write("progress.md", f"# Progress\nTask: {task}\n", text=True)
@@ -397,6 +420,7 @@ class Engine:
 
     def verify(self, criteria):
         results, rubric = [], []
+        checked_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         for c in criteria:
             if c["kind"] == "exec":
                 if any(re.search(d, c["command"]) for d in DENY):
@@ -406,29 +430,45 @@ class Engine:
                     raise ApprovalDenied(
                         f"verification command for criterion {c['id']} was not approved. "
                         "Review .wf/criteria.json, then approve it in a terminal or resume with --approve auto.")
+                started, p = time.time(), None
                 try:
                     p = subprocess.run(c["command"], shell=True, cwd=self.store.ws, capture_output=True, text=True,
                                        timeout=self.tools.cmd_timeout, env=scrubbed_env())
-                    ok, why = p.returncode == 0, (p.stdout + p.stderr)[-500:]
+                    output = p.stdout + p.stderr
+                    ok, why, exit_code = p.returncode == 0, output[-500:], p.returncode
                 except Exception as e:
-                    ok, why = False, str(e)
+                    output, ok, why, exit_code = str(e), False, str(e), None
                 results.append({"id": c["id"], "must": c["must"], "passed": ok, "reason": why,
-                                "failure_stage": None if ok else "implement"})
+                                "failure_stage": None if ok else "implement", "command": c["command"],
+                                "exit_code": exit_code, "duration_seconds": round(time.time() - started, 3),
+                                "checked_at": checked_at, "output": output[-4000:]})
             else:
                 rubric.append(c)
         if rubric:
-            judged = self.ask_json("verifier", VERIFIER_PROMPT, f"Task:\n{self.state['task']}\n\nCriteria:\n"
-                                   f"{json.dumps(rubric, indent=1)}\n\nDeliverables:\n{self.snapshot()}")
-            if isinstance(judged, dict):
-                for key in ("results", "criteria", "items", "checks"):
-                    if isinstance(judged.get(key), list):
-                        judged = judged[key]
-                        break
-            judged = {str(j.get("id")): j for j in judged if isinstance(j, dict)} if isinstance(judged, list) else {}
+            votes = max(1, int((self.state or {}).get("limits", {}).get("verifier_votes", 3)))
+            prompt = (f"Task:\n{self.state['task']}\n\nCriteria:\n{json.dumps(rubric, indent=1)}"
+                      f"\n\nDeliverables:\n{self.snapshot()}")
+            ballots = [normalize_verdicts(self.ask_json("verifier", VERIFIER_PROMPT, prompt)) for _ in range(votes)]
             for c in rubric:
-                j = judged.get(str(c["id"]), {"passed": False, "reason": "not judged", "failure_stage": "implement"})
-                results.append({"id": c["id"], "must": c["must"], "passed": bool(j.get("passed")),
-                                "reason": j.get("reason", ""), "failure_stage": j.get("failure_stage")})
+                seen = [b.get(str(c["id"])) for b in ballots]
+                seen = [v for v in seen if isinstance(v, dict)]
+                yes = sum(bool(v.get("passed")) for v in seen)
+                no = len(seen) - yes
+                if yes > votes / 2:
+                    passing = [v for v in seen if v.get("passed")]
+                    reason = next((v.get("reason", "") for v in passing if v.get("reason")), "")
+                    passed, stage = True, None
+                elif no > votes / 2:
+                    failing = [v for v in seen if not v.get("passed")]
+                    stage = Counter(v.get("failure_stage") or "implement" for v in failing).most_common(1)[0][0]
+                    reason = next((v.get("reason", "") for v in failing if v.get("reason")), "no majority")
+                    passed = False
+                else:
+                    passed, reason, stage = False, "no majority", "implement"
+                results.append({"id": c["id"], "must": c["must"], "passed": passed, "reason": reason,
+                                "failure_stage": stage, "checked_at": checked_at,
+                                "votes": [{"passed": bool(v.get("passed")), "reason": v.get("reason", ""),
+                                           "failure_stage": v.get("failure_stage")} for v in seen]})
         return results
 
     def step_verify(self):

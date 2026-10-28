@@ -1,0 +1,164 @@
+import io
+import json
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+from types import SimpleNamespace
+
+from workflow.cli import SKILLS, run_eval
+from workflow.engine import Engine
+from workflow.providers import Provider, Reply
+from workflow.state import Store
+
+RUBRIC = [{"id": "r1", "text": "the result is complete", "kind": "rubric", "must": True}]
+
+
+class Script(Provider):
+    def __init__(self, replies):
+        self.name = "script"
+        self.replies = list(replies)
+        self.calls = 0
+
+    @property
+    def last_provider(self):
+        return self.name
+
+    def chat(self, system, messages, tools=None, max_tokens=4096):
+        self.calls += 1
+        return self.replies.pop(0)
+
+
+def state(**changes):
+    value = {
+        "schema_version": 1,
+        "task": "check the thing",
+        "profile": "coding",
+        "stage": "verify",
+        "status": "running",
+        "reason": "",
+        "round": 1,
+        "tokens": 0,
+        "elapsed": 0.0,
+        "best_failed": None,
+        "stale": 0,
+        "feedback": "",
+        "failed": [],
+        "limits": {
+            "max_rounds": 4,
+            "max_tokens": 100000,
+            "max_seconds": 7200,
+            "max_turns": 10,
+            "max_context_chars": 150000,
+            "verifier_votes": 3,
+        },
+        "providers_used": {},
+    }
+    value.update(changes)
+    return value
+
+
+def verdict(passed, reason="", stage=None):
+    return Reply(json.dumps([{"id": "r1", "passed": passed, "reason": reason, "failure_stage": stage}]))
+
+
+class Reliability(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.ws = self.tmp.name
+        self.store = Store(self.ws)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_old_state_is_migrated_to_the_current_schema(self):
+        self.store.write("state.json", state(schema_version=None, status="paused", stage="work"))
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        st = eng.start(None)
+        self.assertEqual(st["schema_version"], 1)
+        self.assertIn("schema_migrated", (Path(self.ws) / ".wf" / "journal.jsonl").read_text())
+
+    def test_newer_state_schema_is_rejected(self):
+        self.store.write("state.json", state(schema_version=99, status="paused", stage="work"))
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        with self.assertRaisesRegex(ValueError, "newer"):
+            eng.start(None)
+
+    def test_failed_run_requires_an_explicit_retry(self):
+        self.store.write("state.json", state(status="failed", stage="work", reason="provider failed"))
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        with self.assertRaisesRegex(ValueError, "retry-failed"):
+            eng.start(None)
+        st = eng.start(None, retry_failed=True)
+        self.assertEqual(st["status"], "running")
+        self.assertEqual(st["reason"], "")
+
+    def test_rubric_majority_and_evidence_are_recorded(self):
+        self.store.write("state.json", state())
+        verifier = Script([verdict(True, "ok"), verdict(False, "missing", "plan"), verdict(True, "ok")])
+        eng = Engine(self.ws, {}, {"verifier": verifier}, SKILLS, approve="auto", confirm="auto")
+        out = eng.verify(RUBRIC)[0]
+        self.assertTrue(out["passed"])
+        self.assertEqual(verifier.calls, 3)
+        self.assertEqual(len(out["votes"]), 3)
+        self.assertTrue(out["checked_at"].endswith("Z"))
+
+    def test_rubric_without_a_majority_fails(self):
+        self.store.write("state.json", state())
+        verifier = Script([verdict(True), verdict(False, "not sure", "plan"), Reply("{}")])
+        eng = Engine(self.ws, {}, {"verifier": verifier}, SKILLS, approve="auto", confirm="auto")
+        out = eng.verify(RUBRIC)[0]
+        self.assertFalse(out["passed"])
+        self.assertIn("no majority", out["reason"])
+
+    def test_failure_stage_uses_the_majority_of_failing_votes(self):
+        self.store.write("state.json", state())
+        verifier = Script([
+            verdict(False, "wrong approach", "plan"),
+            verdict(False, "missing knowledge", "research"),
+            verdict(False, "still wrong", "plan"),
+        ])
+        eng = Engine(self.ws, {}, {"verifier": verifier}, SKILLS, approve="auto", confirm="auto")
+        out = eng.verify(RUBRIC)[0]
+        self.assertFalse(out["passed"])
+        self.assertEqual(out["failure_stage"], "plan")
+
+    def test_eval_skips_a_failed_run_instead_of_crashing(self):
+        out = Path(self.ws) / "eval_runs"
+        ws = out / "one"
+        ws.mkdir(parents=True)
+        Store(str(ws)).write("state.json", state(status="failed", reason="bad", stage="work"))
+        cfg = Path(self.ws) / "config.json"
+        cfg.write_text(json.dumps({
+            "providers": {"p": {"type": "command", "command": "true"}},
+            "roles": {r: ["p"] for r in ("router", "planner", "executor", "verifier")},
+        }))
+        tasks = Path(self.ws) / "tasks.json"
+        tasks.write_text(json.dumps([{"id": "one", "task": "x", "profile": "coding", "criteria": RUBRIC}]))
+        with redirect_stdout(io.StringIO()):
+            rc = run_eval(SimpleNamespace(out=str(out), config=str(cfg), approve="auto",
+                                          confirm="auto", file=str(tasks)))
+        self.assertEqual(rc, 2)
+        self.assertEqual(json.loads((out / "results.json").read_text())[0]["status"], "failed")
+
+    def test_exec_evidence_includes_command_exit_duration_and_output(self):
+        self.store.write("state.json", state())
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        out = eng.verify([{
+            "id": "c1",
+            "text": "the command fails",
+            "kind": "exec",
+            "must": True,
+            "command": "printf out; printf err >&2; exit 3",
+        }])[0]
+        self.assertFalse(out["passed"])
+        self.assertEqual(out["command"], "printf out; printf err >&2; exit 3")
+        self.assertEqual(out["exit_code"], 3)
+        self.assertGreaterEqual(out["duration_seconds"], 0)
+        self.assertTrue(out["checked_at"].endswith("Z"))
+        self.assertIn("out", out["output"])
+        self.assertIn("err", out["output"])
+
+
+if __name__ == "__main__":
+    unittest.main()

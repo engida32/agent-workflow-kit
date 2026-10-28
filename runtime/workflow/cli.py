@@ -15,6 +15,11 @@ from .state import Locked, Store
 ROLES = ("router", "planner", "executor", "verifier")
 
 
+def load_json(path):
+    with open(path) as f:
+        return json.load(f)
+
+
 def task_skills_dir():
     """Locate the packaged task skills in a source checkout or an installed wheel."""
     env = os.getenv("WF_TASK_SKILLS_DIR")
@@ -51,7 +56,7 @@ def default_config():
 
 
 def make_engine(workspace, args):
-    cfg = json.load(open(args.config)) if args.config else default_config()
+    cfg = load_json(args.config) if args.config else default_config()
     if not isinstance(cfg, dict):
         raise ValueError("config must be a JSON object")
     specs = cfg.get("providers")
@@ -99,6 +104,7 @@ def main(argv=None):
     s.add_argument("workspace")
     s.add_argument("--add-rounds", type=int, default=0)
     s.add_argument("--add-tokens", type=int, default=0)
+    s.add_argument("--retry-failed", action="store_true", help="retry a run that ended in failed after fixing the cause")
     common(s)
     t = sub.add_parser("status")
     t.add_argument("workspace")
@@ -117,12 +123,12 @@ def main(argv=None):
             print(json.dumps({k: st.get(k) for k in keys} if st else {"status": "no run here"}, indent=1))
             return 0
         if a.cmd == "run":
-            crit = json.load(open(a.criteria)) if a.criteria else None
+            crit = load_json(a.criteria) if a.criteria else None
             eng = make_engine(a.workspace, a)
             eng.start(a.task, a.profile, crit)
         elif a.cmd == "resume":
             eng = make_engine(a.workspace, a)
-            eng.start(None, add_rounds=a.add_rounds, add_tokens=a.add_tokens)
+            eng.start(None, add_rounds=a.add_rounds, add_tokens=a.add_tokens, retry_failed=a.retry_failed)
         else:
             return run_eval(a)
         s = eng.run()
@@ -140,14 +146,16 @@ def run_eval(a):
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     rows = []
-    for t in json.load(open(a.file)):
+    for t in load_json(a.file):
         ws = out / t["id"]
         prior = Store(ws).read("state.json") if ws.exists() else None
         if not isinstance(prior, dict):
             prior = None
         eng = make_engine(ws, a)
-        eng.start(t["task"], t.get("profile"), t["criteria"])
-        s = eng.run() if not prior or prior["status"] not in TERMINAL else eng.summary()
+        finished = prior and prior["status"] in TERMINAL
+        if not finished:
+            eng.start(t["task"], t.get("profile"), t["criteria"])
+        s = eng.summary() if finished else eng.run()
         rows.append({"id": t["id"], **{k: s[k] for k in ("status", "round", "tokens", "elapsed", "failed")}})
         print(f"[{t['id']}] {s['status']} rounds={s['round']} tokens={s['tokens']}", flush=True)
         (out / "results.json").write_text(json.dumps(rows, indent=1))
