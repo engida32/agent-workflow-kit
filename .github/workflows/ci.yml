@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run the offline test suite
+        run: python -m unittest discover -s runtime/tests -v
+
+      - name: Install the package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+      - name: Smoke-test the installed command
+        run: |
+          workflow --version
+          workflow --help
+
+      - name: Smoke-test installed task skills
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from workflow.cli import task_skills_dir
+
+          skills = task_skills_dir()
+          names = sorted(p.name for p in Path(skills).glob("*.md"))
+          assert names == ["coding.md", "design.md", "evaluation.md", "research.md"], names
+          print("task skills:", skills, names)
+          PY
