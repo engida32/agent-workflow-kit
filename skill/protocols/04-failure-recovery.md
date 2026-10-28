@@ -23,8 +23,8 @@ Route by cause, not always back to the start:
 | Cause | Go back to |
 |---|---|
 | A defect in the work (bug, missing section) | Work, same plan |
-| Wrong approach or incomplete plan | Plan |
-| Missing knowledge | Research the specific gap |
+| Wrong approach or incomplete plan | Plan again, with the verifier feedback |
+| Missing knowledge | Research the specific gap, then plan again |
 | Criterion ambiguous or contradictory | Ask the human |
 
 ## Loops and budgets

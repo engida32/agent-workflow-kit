@@ -29,10 +29,11 @@ when you reach the step that needs it.
 |---|------|-------------|----------|
 | 1 | Route | Pick the profile: coding, research, design or evaluation. Pick the simplest pattern that fits (`protocols/01-patterns.md`). | `state.json` |
 | 2 | Criteria | Write acceptance criteria BEFORE working. Prefer checks a command can run. Show them to the user and get a yes or edits. | `criteria.json` |
-| 3 | Plan | 3-7 units. Say WHAT and WHY, leave HOW to the work step. | `task_list.json` |
-| 4 | Work | Load the task skill from `task-skills/`. Do the next unfinished units. After each meaningful step, append a progress note. | files + `progress.md` |
-| 5 | Verify | Run the executable criteria; judge the rest with a fresh, skeptical reviewer (`protocols/03-verification.md`). | `verify_N.json` |
-| 6 | Recover | If it fails, go back to the stage that failed, not always to the start (`protocols/04-failure-recovery.md`). | `state.json` |
+| 3 | Research (optional) | Run when the profile is `research`, or when the verifier says knowledge is missing. Investigate the gaps, write `research.md`, and do not build the deliverable yet. | `research.md` + `progress.md` |
+| 4 | Plan | 3-7 units. Say WHAT and WHY, leave HOW to the work step. Read `research.md` and any verifier feedback first when they exist. | `task_list.json` |
+| 5 | Work | Load the task skill from `task-skills/`. Do the next unfinished units. After each meaningful step, append a progress note. | files + `progress.md` |
+| 6 | Verify | Run the executable criteria; judge the rest with a fresh, skeptical reviewer (`protocols/03-verification.md`). | `verify_N.json` |
+| 7 | Recover | If it fails, go back to the stage that failed, not always to the start (`protocols/04-failure-recovery.md`). A missing-knowledge failure goes to Research, then replans. | `state.json` |
 
 Stop when every must-pass criterion passes, or when a limit is hit (rounds, tokens, time, no progress for two
 rounds). Then report honestly: what passed, what did not, what is left.

@@ -177,15 +177,16 @@ with `--confirm auto`. Supplying `--criteria` skips the gate; that exception is
 documented in `KNOWN_ISSUES.md` rather than hidden.
 
 **Do not auto-invoke promptify.** The brief is a front door, not a stage. The
-runtime takes a task string or a `BRIEF.md` that already exists. Automatically
-calling another skill from inside the loop would add a second approval gate and
-make the state machine depend on a skill registry.
+runtime takes a task string; the skill form can read a `BRIEF.md` that already
+exists at the workspace root. Automatically calling another skill from inside
+the loop would add a second approval gate and make the state machine depend on a
+skill registry.
 
 **No new dependencies.** The loop changes are standard library only.
 
 ## What changed
 
-The follow-up implementation PR adds:
+The 0.2.0 implementation adds:
 
 - a `research` stage with `research_system_prompt`, `research_prompt`,
   `step_research`, and `research_transcript.json`;

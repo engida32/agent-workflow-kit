@@ -15,8 +15,10 @@ Agents tend to praise their own work. Separate the maker from the checker and ma
 - Prefer a different model or at least a fresh session for the reviewer.
 - Tell the reviewer to be skeptical and to pass an item only when the evidence is in the files.
 - For subjective items, run the judgment two or three times and take the majority.
-- The reviewer returns, per item: passed, a one-line reason, and a failure stage
-  (implement, plan, research, or criteria).
+- The reviewer returns, per item: passed, a one-line reason, and a failure stage.
+  `implement` means a defect in the work, `plan` means the approach is wrong,
+  `research` means knowledge is missing, and `criteria` means the criterion itself
+  is ambiguous.
 - For interactive things (a web page, an app), verify by using them (run them, click through) and not by reading code.
 
 ## Calibrate
