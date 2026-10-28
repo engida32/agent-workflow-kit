@@ -1,0 +1,53 @@
+name: Feature request
+description: Propose a change to the workflow, runtime, skill, or documentation.
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with the problem, not the implementation. Changes to stages, the
+        verifier contract, the safety model, or the state schema need an issue first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard, missing, or surprising today? Who hits it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What should happen instead? Keep it as small as the problem allows.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you try or reject, and why?
+    validations:
+      required: false
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Runtime
+        - Skill or protocol
+        - Packaging or install
+        - Documentation
+        - Eval
+        - Not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and pull requests for this idea.
+          required: true
+        - label: This change keeps the runtime dependency-free, or I explained why it cannot.
+          required: false

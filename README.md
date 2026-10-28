@@ -253,8 +253,10 @@ gh repo edit engida32/agent-workflow-kit \
 ## Contributing
 
 Bug reports and focused pull requests are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: one change per
-PR, a test for every behaviour change, offline tests, and no new runtime dependencies. Security issues go through
-[`SECURITY.md`](SECURITY.md), not the public tracker.
+PR, a test for every behaviour change, offline tests, and no new runtime dependencies. `main` is protected, so every
+change lands through a pull request with passing CI. Participation is covered by the
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md), and project decisions follow [`GOVERNANCE.md`](GOVERNANCE.md). Security
+issues go through [`SECURITY.md`](SECURITY.md), not the public tracker.
 
 ## License
 
@@ -269,6 +271,8 @@ runtime/                 Python runtime (workflow/, tests/, config.example.json)
 eval/eval_tasks.json     10-task eval set
 docs/                    research notes and design decisions
 pyproject.toml           packaging and the `workflow` entry point
-.github/workflows/ci.yml tests and install smoke test on Python 3.9-3.14
+.github/                 issue and PR templates, CodeQL, Dependabot, CODEOWNERS
+CODE_OF_CONDUCT.md       community expectations and enforcement
+GOVERNANCE.md            maintainer, review, merge and release policy
 KNOWN_ISSUES.md          intentional limits and unverified behaviour
 ```

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Open-source contribution standards: a code of conduct, governance policy,
+  pull request template, bug and feature issue forms, CODEOWNERS, Dependabot,
+  and CodeQL analysis.
+- Branch protection for `main`: pull requests only, required Python and CodeQL
+  checks, up-to-date branches, resolved conversations, linear history, and no
+  force pushes or deletion.
+
 ## [0.2.0] - 2026-10-28
 
 ### Added
