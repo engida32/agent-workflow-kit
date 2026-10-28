@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-workflow-kit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Resumable, provider-neutral agent workflow with independent verification"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -43,3 +43,4 @@ include = ["workflow*"]
 
 [tool.setuptools.data-files]
 "share/agent-workflow/task-skills" = ["skill/task-skills/*.md"]
+"share/agent-workflow" = ["runtime/config.example.json"]
