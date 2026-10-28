@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-10-28
+
+### Fixed
+
+- An empty `providers` object, a null provider spec, or a non-object `state.json`
+  now reports a clean error and exit code 2 instead of an `IndexError`,
+  `AttributeError` or traceback.
+- A missing API key during auto-detection reports exit code 2 as documented, not 1.
+
+### Changed
+
+- CI now covers Python 3.10 and 3.11 as well, matching the documented 3.9-3.14 range.
+- The example config ships with the wheel under `share/agent-workflow/`.
+- Three regression tests cover the malformed config and state paths; the suite is
+  now 25 tests.
+
 ## [0.1.0] - 2026-10-28
 
 First public release.

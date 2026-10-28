@@ -242,6 +242,8 @@ class Resilient:
 
 
 def build_provider(name, spec):
+    if not isinstance(spec, dict):
+        raise ValueError(f"provider {name!r} must be a JSON object with a type")
     t = spec.get("type")
     if t == "anthropic":
         return AnthropicProvider(name, **{k: v for k, v in spec.items() if k != "type"})
