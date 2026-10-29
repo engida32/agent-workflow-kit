@@ -116,7 +116,7 @@ def main(argv=None):
 
     try:
         if a.cmd == "status":
-            st = Store(a.workspace).read("state.json") if (pathlib.Path(a.workspace) / ".wf").exists() else None
+            st = Store(a.workspace).read("state.json", strict=True) if (pathlib.Path(a.workspace) / ".wf").exists() else None
             if st is not None and not isinstance(st, dict):
                 raise ValueError("state.json is not a JSON object")
             keys = ("status", "reason", "stage", "round", "profile", "tokens", "elapsed", "failed")

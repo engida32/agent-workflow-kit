@@ -14,7 +14,7 @@ import time
 from collections import Counter
 
 from .providers import Disruption, Fatal
-from .state import Store
+from .state import StateError, Store
 from .tools import DENY, SPECS, Tools, iter_files, scrubbed_env
 
 PROFILES = {
@@ -133,17 +133,22 @@ class Engine:
         self.save()
 
     def start(self, task=None, profile=None, criteria=None, add_rounds=0, add_tokens=0, retry_failed=False):
-        st = self.store.read("state.json")
-        if st:
+        st = self.store.read("state.json", strict=True)
+        if st is not None:
+            if not isinstance(st, dict) or not st.get("task"):
+                raise StateError("state.json is incomplete; restore .wf/state.json or start in a fresh workspace")
             if task and st["task"] != task:
                 raise ValueError("this workspace already belongs to a different task")
             self._state = st
             version = st.get("schema_version")
+            if version is not None and not isinstance(version, int):
+                raise StateError("state.json has a non-integer schema_version")
             if version is None:
                 st["schema_version"] = STATE_SCHEMA
                 self.store.journal(event="schema_migrated", from_version=None, to_version=STATE_SCHEMA)
             elif version > STATE_SCHEMA:
                 raise ValueError(f"state schema {version} is newer than this runtime supports ({STATE_SCHEMA})")
+            st["limits"] = {**DEFAULT_LIMITS, **st.get("limits", {})}
             st["limits"]["max_rounds"] += add_rounds
             st["limits"]["max_tokens"] += add_tokens
             if st["status"] == "failed":

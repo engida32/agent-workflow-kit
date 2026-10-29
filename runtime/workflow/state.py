@@ -10,6 +10,10 @@ class Locked(Exception):
     pass
 
 
+class StateError(ValueError):
+    pass
+
+
 def _alive(pid):
     try:
         os.kill(pid, 0)
@@ -40,7 +44,7 @@ class Store:
             os.fsync(f.fileno())
         os.replace(tmp, p)  # atomic: a crash leaves either the old or the new file, never half of one
 
-    def read(self, name, default=None, text=False):
+    def read(self, name, default=None, text=False, strict=False):
         p = self.path(name)
         if not p.exists():
             return default
@@ -49,7 +53,9 @@ class Store:
             return raw
         try:
             return json.loads(raw)
-        except ValueError:
+        except ValueError as e:
+            if strict:
+                raise StateError(f"{name} is not valid JSON: {e}") from e
             return default
 
     def append(self, name, line):

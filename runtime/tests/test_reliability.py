@@ -160,5 +160,34 @@ class Reliability(unittest.TestCase):
         self.assertIn("err", out["output"])
 
 
+    def test_corrupt_state_is_rejected_without_overwriting_progress(self):
+        self.store.write("state.json", "{broken", text=True)
+        progress = Path(self.ws) / "progress.md"
+        progress.write_text("important progress")
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        with self.assertRaisesRegex(ValueError, "not valid JSON"):
+            eng.start("new task")
+        self.assertEqual(progress.read_text(), "important progress")
+
+    def test_empty_state_object_is_rejected(self):
+        self.store.write("state.json", {})
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        with self.assertRaisesRegex(ValueError, "incomplete"):
+            eng.start("new task")
+
+    def test_partial_state_gets_default_limits(self):
+        self.store.write("state.json", state(limits={"max_rounds": 2}))
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        st = eng.start(None)
+        self.assertEqual(st["limits"]["max_rounds"], 2)
+        self.assertEqual(st["limits"]["max_tokens"], 600000)
+
+    def test_non_integer_schema_version_is_rejected(self):
+        self.store.write("state.json", state(schema_version="1"))
+        eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
+        with self.assertRaisesRegex(ValueError, "non-integer"):
+            eng.start(None)
+
+
 if __name__ == "__main__":
     unittest.main()
