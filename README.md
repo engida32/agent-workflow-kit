@@ -109,7 +109,8 @@ pip install "git+https://github.com/engida32/agent-workflow-kit.git"
 cp runtime/config.example.json runtime/config.json
 # edit models and provider names; API keys come from environment variables
 export ANTHROPIC_API_KEY=...
-workflow run "Write slugify.py with tests" -w workspace --config runtime/config.json
+workflow run "Write slugify.py with tests" -w workspace \
+  --config runtime/config.json
 ```
 
 If the run is interrupted, rate limited, or the provider goes down:
@@ -175,7 +176,11 @@ Any profile can be sent back to research by the verifier when the failure is mis
 ## Eval
 
 ```bash
-workflow eval eval/eval_tasks.json --out eval_runs --config runtime/config.json --confirm auto --approve auto
+workflow eval eval/eval_tasks.json \
+  --out eval_runs \
+  --config runtime/config.json \
+  --confirm auto \
+  --approve auto
 ```
 
 Ten tasks across the four profiles. Finished tasks are skipped when you rerun. `--approve auto` executes model-written commands, so run the eval in a container.
@@ -243,7 +248,8 @@ Repository discoverability is a GitHub setting, not a file in the repo. Set topi
 
 ```bash
 gh repo edit engida32/agent-workflow-kit \
-  --description "Resumable, provider-neutral agent workflow with independent verification" \
+  --description "Resumable, provider-neutral agent workflow with independent \
+verification" \
   --add-topic agentic-workflow --add-topic ai-agents --add-topic llm \
   --add-topic agent-orchestration --add-topic workflow --add-topic python \
   --add-topic resumable --add-topic verification --add-topic anthropic \
@@ -282,7 +288,12 @@ KNOWN_ISSUES.md          intentional limits and unverified behaviour
 You do not need to restart your project or open a new chat. Install the skill form once, then paste this into the session that is already running:
 
 ```text
-Use the agent-workflow skill in this repo on the work already here. Read `skill/SKILL.md` directly, then read `.wf/state.json` if it exists and resume from the saved stage. Do not rebuild completed work. If there is no state, turn the current task into acceptance criteria, show them to me, and wait.
+Use the agent-workflow skill in this repo on the work already here.
+Read `skill/SKILL.md` directly, then read `.wf/state.json` if it exists
+and resume from the saved stage.
+Do not rebuild completed work.
+If there is no state, turn the current task into acceptance criteria,
+show them to me, and wait.
 ```
 
 The agent will:
