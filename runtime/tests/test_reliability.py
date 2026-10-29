@@ -7,9 +7,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from workflow.cli import SKILLS, run_eval
-from workflow.engine import Engine
+from workflow.engine import Engine, normalize_criteria
 from workflow.providers import Provider, Reply
 from workflow.state import Store
+from unittest.mock import patch
 
 RUBRIC = [{"id": "r1", "text": "the result is complete", "kind": "rubric", "must": True}]
 
@@ -187,6 +188,26 @@ class Reliability(unittest.TestCase):
         eng = Engine(self.ws, {}, {}, SKILLS, approve="auto", confirm="auto")
         with self.assertRaisesRegex(ValueError, "non-integer"):
             eng.start(None)
+
+
+    def test_malformed_criteria_is_a_clean_error(self):
+        for bad in ([{"id": "a"}, "oops"], {"criteria": "no"}, [{"id": "a", "text": ""}]):
+            with self.assertRaises(ValueError):
+                normalize_criteria(bad)
+
+    def test_non_tty_criteria_review_holds_at_the_criteria_stage(self):
+        self.store.write("state.json", state(stage="criteria", status="running"))
+        planner = Script([Reply(json.dumps([{"id": "c1", "text": "the result exists"}]))])
+        eng = Engine(self.ws, {}, {"planner": planner}, SKILLS, confirm="ask")
+        with patch("sys.stdin.isatty", return_value=False):
+            eng.step_criteria()
+        self.assertEqual(eng.state["stage"], "criteria")
+        self.assertEqual(eng.state["status"], "needs_human")
+        self.assertTrue(eng.state["criteria_pending"])
+        eng.start(None)
+        self.assertFalse(eng.state["criteria_pending"])
+        eng.step_criteria()
+        self.assertEqual(eng.state["stage"], "plan")
 
 
 if __name__ == "__main__":

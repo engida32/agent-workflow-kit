@@ -77,12 +77,19 @@ def parse_json(text):
 def normalize_criteria(crit):
     if isinstance(crit, dict):
         crit = crit.get("criteria", [])
+    if not isinstance(crit, list):
+        raise ValueError("criteria must be a JSON list")
     out = []
     for i, c in enumerate(crit, 1):
+        if not isinstance(c, dict):
+            raise ValueError(f"criterion {i} must be a JSON object")
+        text = c.get("text")
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError(f"criterion {i} needs non-empty text")
         kind = c.get("kind", "rubric")
         if kind == "exec" and not c.get("command"):
             kind = "rubric"
-        out.append({"id": str(c.get("id", f"c{i}")), "text": c.get("text", ""), "kind": kind,
+        out.append({"id": str(c.get("id", f"c{i}")), "text": text, "kind": kind,
                     "must": bool(c.get("must", True)), **({"command": c["command"]} if kind == "exec" else {})})
     return out
 
@@ -151,6 +158,9 @@ class Engine:
             st["limits"] = {**DEFAULT_LIMITS, **st.get("limits", {})}
             st["limits"]["max_rounds"] += add_rounds
             st["limits"]["max_tokens"] += add_tokens
+            if st.get("criteria_pending") and st.get("stage") == "criteria":
+                st["criteria_pending"] = False
+                self.store.journal(event="criteria_accepted")
             if st["status"] == "failed":
                 if not retry_failed:
                     raise ValueError("this run failed; fix the cause, then resume with --retry-failed")
@@ -166,7 +176,7 @@ class Engine:
             self._state = {"schema_version": STATE_SCHEMA, "task": task, "profile": profile, "stage": "route",
                            "status": "running", "reason": "", "round": 1, "tokens": 0, "elapsed": 0.0,
                            "best_failed": None, "stale": 0, "feedback": "", "failed": [], "limits": lim,
-                           "providers_used": {}}
+                           "criteria_pending": False, "providers_used": {}}
             if criteria:
                 self.store.write("criteria.json", normalize_criteria(criteria))
             self.store.write("progress.md", f"# Progress\nTask: {task}\n", text=True)
@@ -263,7 +273,7 @@ class Engine:
                     print(json.dumps(crit, indent=1))
                     input("Edit .wf/criteria.json if needed, then press Enter to accept... ")
                 else:
-                    self.advance(nxt)
+                    self.state["criteria_pending"] = True
                     return self.hold("needs_human", "Review .wf/criteria.json (edit if needed), then run resume.")
         self.advance(nxt)
 
