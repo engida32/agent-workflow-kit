@@ -65,6 +65,32 @@ class WorkspaceScan(unittest.TestCase):
             self.assertNotIn("A" * 6001, snap)
 
 
+    def test_snapshot_skips_secrets_and_symlinks(self):
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as outside:
+            ws = pathlib.Path(d)
+            (ws / "hello.txt").write_text("deliverable")
+            (ws / ".env").write_text("SECRET=abc")
+            (ws / "server.pem").write_text("PRIVATE")
+            (pathlib.Path(outside) / "outside.txt").write_text("outside-secret")
+            try:
+                (ws / "link.txt").symlink_to(pathlib.Path(outside) / "outside.txt")
+            except OSError:
+                self.skipTest("symlinks unavailable")
+            snap = Engine(ws, {}, {}, SKILLS).snapshot()
+            self.assertIn("deliverable", snap)
+            self.assertNotIn("SECRET=abc", snap)
+            self.assertNotIn("PRIVATE", snap)
+            self.assertNotIn("outside-secret", snap)
+
+    def test_snapshot_marks_truncation(self):
+        with tempfile.TemporaryDirectory() as d:
+            ws = pathlib.Path(d)
+            for i in range(6):
+                (ws / f"part{i}.txt").write_text("A" * 6000)
+            snap = Engine(ws, {}, {}, SKILLS).snapshot()
+            self.assertIn("[snapshot truncated at 30000 chars;", snap)
+
+
 class Verification(unittest.TestCase):
     def test_verifier_dict_results_are_normalized(self):
         with tempfile.TemporaryDirectory() as d:

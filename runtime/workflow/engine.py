@@ -421,7 +421,11 @@ class Engine:
             except (OSError, ValueError):
                 continue
             parts.append(f"--- {f.relative_to(self.store.ws)} ---\n{text}")
-        return "\n".join(parts)[:limit]
+        snapshot = "\n".join(parts)
+        if len(snapshot) <= limit:
+            return snapshot
+        omitted = len(snapshot) - limit
+        return snapshot[:limit] + f"\n[snapshot truncated at {limit} chars; {omitted} chars omitted]"
 
     def verify(self, criteria):
         results, rubric = [], []
