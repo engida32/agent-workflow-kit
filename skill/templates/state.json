@@ -1,4 +1,5 @@
-{"task": "", "profile": "coding", "stage": "work", "status": "running", "reason": "", "round": 1,
- "tokens": 0, "elapsed": 0, "best_failed": null, "stale": 0, "feedback": "", "failed": [],
- "limits": {"max_rounds": 4, "max_tokens": 600000, "max_seconds": 7200, "max_turns": 40, "max_context_chars": 150000},
+{"schema_version": 1, "task": "", "profile": "coding", "stage": "work", "status": "running", "reason": "",
+ "round": 1, "tokens": 0, "elapsed": 0, "best_failed": null, "stale": 0, "feedback": "", "failed": [],
+ "limits": {"max_rounds": 4, "max_tokens": 600000, "max_seconds": 7200, "max_turns": 40,
+            "max_context_chars": 150000, "verifier_votes": 3},
  "providers_used": {}}

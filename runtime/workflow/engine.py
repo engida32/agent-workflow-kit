@@ -74,6 +74,13 @@ def parse_json(text):
     raise ValueError("no JSON found")
 
 
+def vote_count(limits):
+    value = (limits or {}).get("verifier_votes", 3)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError("limits.verifier_votes must be an integer")
+    return max(1, min(9, value))
+
+
 def normalize_criteria(crit):
     if isinstance(crit, dict):
         crit = crit.get("criteria", [])
@@ -156,6 +163,7 @@ class Engine:
             elif version > STATE_SCHEMA:
                 raise ValueError(f"state schema {version} is newer than this runtime supports ({STATE_SCHEMA})")
             st["limits"] = {**DEFAULT_LIMITS, **st.get("limits", {})}
+            st["limits"]["verifier_votes"] = vote_count(st["limits"])
             st["limits"]["max_rounds"] += add_rounds
             st["limits"]["max_tokens"] += add_tokens
             if st.get("criteria_pending") and st.get("stage") == "criteria":
@@ -173,6 +181,7 @@ class Engine:
             if not task:
                 raise ValueError("a task is required for a new run")
             lim = {**DEFAULT_LIMITS, **self.cfg.get("limits", {})}
+            lim["verifier_votes"] = vote_count(lim)
             self._state = {"schema_version": STATE_SCHEMA, "task": task, "profile": profile, "stage": "route",
                            "status": "running", "reason": "", "round": 1, "tokens": 0, "elapsed": 0.0,
                            "best_failed": None, "stale": 0, "feedback": "", "failed": [], "limits": lim,
@@ -464,30 +473,36 @@ class Engine:
             else:
                 rubric.append(c)
         if rubric:
-            votes = max(1, int((self.state or {}).get("limits", {}).get("verifier_votes", 3)))
+            votes = vote_count((self.state or {}).get("limits", {}))
             prompt = (f"Task:\n{self.state['task']}\n\nCriteria:\n{json.dumps(rubric, indent=1)}"
                       f"\n\nDeliverables:\n{self.snapshot()}")
             ballots = [normalize_verdicts(self.ask_json("verifier", VERIFIER_PROMPT, prompt)) for _ in range(votes)]
             for c in rubric:
-                seen = [b.get(str(c["id"])) for b in ballots]
-                seen = [v for v in seen if isinstance(v, dict)]
-                yes = sum(bool(v.get("passed")) for v in seen)
-                no = len(seen) - yes
+                records = []
+                for b in ballots:
+                    v = b.get(str(c["id"]))
+                    if isinstance(v, dict):
+                        records.append({"passed": bool(v.get("passed")), "reason": v.get("reason", ""),
+                                        "failure_stage": v.get("failure_stage")})
+                    else:
+                        records.append({"passed": None, "reason": "no ballot returned",
+                                        "failure_stage": None, "missing": True})
+                cast = [v for v in records if not v.get("missing")]
+                yes = sum(bool(v.get("passed")) for v in cast)
+                no = len(cast) - yes
                 if yes > votes / 2:
-                    passing = [v for v in seen if v.get("passed")]
+                    passing = [v for v in cast if v.get("passed")]
                     reason = next((v.get("reason", "") for v in passing if v.get("reason")), "")
                     passed, stage = True, None
                 elif no > votes / 2:
-                    failing = [v for v in seen if not v.get("passed")]
+                    failing = [v for v in cast if not v.get("passed")]
                     stage = Counter(v.get("failure_stage") or "implement" for v in failing).most_common(1)[0][0]
                     reason = next((v.get("reason", "") for v in failing if v.get("reason")), "no majority")
                     passed = False
                 else:
                     passed, reason, stage = False, "no majority", "implement"
                 results.append({"id": c["id"], "must": c["must"], "passed": passed, "reason": reason,
-                                "failure_stage": stage, "checked_at": checked_at,
-                                "votes": [{"passed": bool(v.get("passed")), "reason": v.get("reason", ""),
-                                           "failure_stage": v.get("failure_stage")} for v in seen]})
+                                "failure_stage": stage, "checked_at": checked_at, "votes": records})
         return results
 
     def step_verify(self):

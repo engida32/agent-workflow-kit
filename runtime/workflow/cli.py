@@ -152,7 +152,7 @@ def run_eval(a):
         if not isinstance(prior, dict):
             prior = None
         eng = make_engine(ws, a)
-        finished = prior and prior["status"] in TERMINAL
+        finished = prior and prior.get("status") in TERMINAL
         if not finished:
             eng.start(t["task"], t.get("profile"), t["criteria"])
         s = eng.summary() if finished else eng.run()
