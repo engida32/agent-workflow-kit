@@ -13,13 +13,23 @@ DENY = [r"\brm\s+-rf\s+/(\s|$)", r"\bmkfs\b", r":\(\)\s*\{", r"\b(shutdown|reboo
 MAX_OUT = 6000
 SKIP_DIRS = {".git", ".wf", "__pycache__", ".venv", "venv", "node_modules", ".mypy_cache",
              ".pytest_cache", ".ruff_cache", ".tox", ".nox", ".idea"}
+SECRET_NAMES = {".env", ".netrc", ".npmrc", ".pypirc"}
+SECRET_PREFIXES = ("credentials", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519")
+SECRET_SUFFIXES = (".pem", ".key", ".p12", ".pfx")
+
+
+def is_secret(path):
+    name = path.name.lower()
+    return (name in SECRET_NAMES or name.startswith(".env") or name.startswith(SECRET_PREFIXES)
+            or name.endswith(SECRET_SUFFIXES))
 
 
 def iter_files(root):
-    """Deliverable files under root, skipping VCS, virtualenv and cache directories."""
+    """Deliverable files under root, skipping VCS, caches, symlinks and secret-looking files."""
     root = pathlib.Path(root)
     for p in sorted(root.rglob("*")):
-        if p.is_file() and not any(part in SKIP_DIRS for part in p.relative_to(root).parts):
+        if (p.is_file() and not p.is_symlink() and not is_secret(p)
+                and not any(part in SKIP_DIRS for part in p.relative_to(root).parts)):
             yield p
 
 

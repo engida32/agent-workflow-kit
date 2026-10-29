@@ -201,7 +201,7 @@ class Resilient:
 
     @property
     def native_agent(self):
-        return self.chain[0].native_agent
+        return any(p.native_agent for p in self.chain)
 
     def _try(self, method, chain, *a, **kw):
         deadline = time.time() + self.outage_wait

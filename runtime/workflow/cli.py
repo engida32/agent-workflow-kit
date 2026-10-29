@@ -116,7 +116,7 @@ def main(argv=None):
 
     try:
         if a.cmd == "status":
-            st = Store(a.workspace).read("state.json") if (pathlib.Path(a.workspace) / ".wf").exists() else None
+            st = Store(a.workspace).read("state.json", strict=True) if (pathlib.Path(a.workspace) / ".wf").exists() else None
             if st is not None and not isinstance(st, dict):
                 raise ValueError("state.json is not a JSON object")
             keys = ("status", "reason", "stage", "round", "profile", "tokens", "elapsed", "failed")
@@ -152,7 +152,7 @@ def run_eval(a):
         if not isinstance(prior, dict):
             prior = None
         eng = make_engine(ws, a)
-        finished = prior and prior["status"] in TERMINAL
+        finished = prior and prior.get("status") in TERMINAL
         if not finished:
             eng.start(t["task"], t.get("profile"), t["criteria"])
         s = eng.summary() if finished else eng.run()

@@ -182,6 +182,8 @@ class Portability(unittest.TestCase):
         self.assertEqual(CommandProvider("c", "cat").complete("S", "hello").strip(), "S\n\nhello")
         ws = tempfile.mkdtemp()
         cp = CommandProvider("agent", "echo made > out.txt; echo finished", native_agent=True)
+        text = CommandProvider("text", "cat")
+        self.assertTrue(Resilient([text, cp], sleep=lambda s: None).native_agent)
         self.assertIn("finished", Resilient([cp], sleep=lambda s: None).agent("", "do it", ws))
         self.assertTrue((pathlib.Path(ws) / "out.txt").exists())
 

@@ -13,6 +13,9 @@ The interesting surfaces are:
 - command execution during `run_command` and executable verification criteria,
 - workspace path containment (`safe_path`) and the write gate,
 - secret scrubbing of the environment passed to commands,
+- workspace file selection for verifier snapshots. Secret-looking names and
+  symlinks are skipped, but this is a name-based filter, not a guarantee. Keep
+  secrets outside the workspace.
 - untrusted web content handling in `fetch_url`,
 - the workspace lock and state files.
 
