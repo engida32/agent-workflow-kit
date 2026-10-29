@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows
   output, plus every rubric ballot, in `verify_<round>.json`.
 - State files carry a schema version; older files are migrated on resume and
   newer ones are rejected instead of being misread.
+- Run state now records a `criteria_pending` hold, so a non-interactive
+  `--confirm ask` run resumes at the criteria stage.
+- Verifier snapshots skip symlinks and secret-looking files, and append a
+  truncation marker when the total cap is reached.
 
 ### Fixed
 
@@ -30,8 +34,17 @@ All notable changes to this project are documented here. The format follows
   `.wf/criteria.json` rechecks the edited criteria instead of rerunning work.
 - Eval reruns now skip a task whose prior run is terminal, including `failed`,
   instead of failing while setting up the skipped run.
-- The test suite is 40 offline tests, including the regressions above and the
-  new reliability coverage.
+- Corrupt or incomplete state is rejected instead of silently becoming a new
+  run that overwrites progress notes.
+- Malformed criteria are rejected with a clear error instead of an unhandled
+  `AttributeError`.
+- In a non-interactive session, `--confirm ask` holds at the criteria stage
+  instead of advancing past it.
+- Missing verifier ballots are recorded in verification evidence, and
+  `verifier_votes` is clamped to a safe range.
+- A native CLI anywhere in the executor chain is recognized for stage routing.
+- The test suite is 50 offline tests, including the regressions above and the
+  audit-hardening coverage.
 
 ## [0.2.0] - 2026-10-28
 

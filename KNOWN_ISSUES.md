@@ -34,6 +34,10 @@ When you pass `--criteria file.json`, the criteria are accepted without the usua
 human review prompt, even with `--confirm ask`. The file is your approval. If you
 want the review step, omit `--criteria` and let the runtime draft criteria.
 
+In a non-interactive session, `--confirm ask` holds at the criteria stage instead
+of advancing. Resuming accepts the drafted criteria; there is no redraft prompt.
+Edit `.wf/criteria.json` before resuming if you want different criteria.
+
 ## In-flight work is replayed on resume
 
 A tool that was executing when the process died is run again on resume, and the
@@ -49,8 +53,13 @@ the verifier role where possible, and treat a poor judge as a configuration bug.
 ## The workspace file list and verifier snapshot skip heavy directories
 
 `.git`, `.wf`, virtualenvs, `node_modules` and cache directories are excluded from
-`list_files` and from the verifier snapshot. If a deliverable legitimately lives in
-one of those directories, move it or name it explicitly in the criteria.
+`list_files` and from the verifier snapshot. The snapshot also skips symlinks and
+secret-looking names: `.env`, `.netrc`, `.npmrc`, `.pypirc`, `credentials` and
+`id_rsa`-style keys, and `.pem`, `.key`, `.p12` and `.pfx` files. This is a
+name-based filter, not a guarantee. Keep secrets outside the workspace. The
+snapshot caps each file and the total, and appends a truncation marker when the
+total cap is hit. If a deliverable legitimately lives in a skipped location, move
+it or name it explicitly in the criteria.
 
 ## `fetch_url` redirects are not re-checked
 
