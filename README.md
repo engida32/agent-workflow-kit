@@ -2,7 +2,7 @@
 
 **Long-running agent work that survives interruption, model changes, and its own mistakes.**
 
-[Quick start](#quick-start) · [Ongoing sessions](#use-it-in-an-ongoing-session) · [How it works](#how-it-works) · [Design notes](#design-notes) · [Portfolio](https://engida.devs.et/)
+[Quick start](#quick-start) · [Ongoing sessions](#use-it-in-an-ongoing-session) · [How it works](#how-it-works) · [Design notes](#design-notes)
 
 [![CI](https://github.com/engida32/agent-workflow-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/engida32/agent-workflow-kit/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776AB.svg)](https://www.python.org/)
@@ -12,7 +12,7 @@ Agent Workflow Kit is a small, resumable workflow for tasks that need more than 
 
 The model works in short sessions instead of one giant conversation. State lives on disk. An independent checker decides when the work is done, not the agent that wrote it. If a provider fails, the run pauses and resumes from the same stage. The same workspace can be continued by a different model.
 
-Built by [Engida Lishan](https://engida.devs.et/).
+Built by Engida Lishan.
 
 ## Why use it
 
@@ -31,26 +31,6 @@ It ships in two forms that follow the same protocol:
 | `runtime/` | You want an unattended run, repeatable checks, or automatic resume | A Python program (standard library only) that enforces the loop in code. |
 
 Start with `AGENT_PROMPT.md` if you are using the skill form. Use `workflow` if you want the runtime.
-
-## Use it in an ongoing session
-
-You do not need to restart your project or open a new chat. Install the skill form once, then paste this into the session that is already running:
-
-> Use the agent-workflow skill in this repo on the work already here. Read `skill/SKILL.md` directly, then read `.wf/state.json` if it exists and resume from the saved stage. Do not rebuild completed work. If there is no state, turn the current task into acceptance criteria, show them to me, and wait.
-
-The agent will:
-
-1. Read the saved state and continue from the stage that stopped.
-2. Keep completed work, criteria, and progress notes intact.
-3. If there is no saved run, turn the current task into criteria and wait for your review before starting.
-
-For the runtime form, the equivalent is:
-
-```bash
-workflow resume workspace --config runtime/config.json
-```
-
-If the workspace has no state yet, start it with `workflow run` as shown in [Quick start](#quick-start).
 
 ## How it works
 
@@ -276,7 +256,7 @@ Bug reports and focused pull requests are welcome. Read [`CONTRIBUTING.md`](CONT
 
 ## Author
 
-Built and maintained by [Engida Lishan](https://engida.devs.et/), a full-stack and AI engineer. More work and case studies are on the [portfolio](https://engida.devs.et/).
+Built and maintained by Engida Lishan, a full-stack and AI engineer.
 
 ## License
 
@@ -296,3 +276,25 @@ CODE_OF_CONDUCT.md       community expectations and enforcement
 GOVERNANCE.md            maintainer, review, merge and release policy
 KNOWN_ISSUES.md          intentional limits and unverified behaviour
 ```
+
+## Use it in an ongoing session
+
+You do not need to restart your project or open a new chat. Install the skill form once, then paste this into the session that is already running:
+
+```text
+Use the agent-workflow skill in this repo on the work already here. Read `skill/SKILL.md` directly, then read `.wf/state.json` if it exists and resume from the saved stage. Do not rebuild completed work. If there is no state, turn the current task into acceptance criteria, show them to me, and wait.
+```
+
+The agent will:
+
+1. Read the saved state and continue from the stage that stopped.
+2. Keep completed work, criteria, and progress notes intact.
+3. If there is no saved run, turn the current task into criteria and wait for your review before starting.
+
+For the runtime form, the equivalent is:
+
+```bash
+workflow resume workspace --config runtime/config.json
+```
+
+If the workspace has no state yet, start it with `workflow run` as shown in [Quick start](#quick-start).
