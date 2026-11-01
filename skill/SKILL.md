@@ -59,3 +59,9 @@ rounds). Then report honestly: what passed, what did not, what is left.
 - `protocols/04-failure-recovery.md` - outages, retries, fallbacks, loops, context limits
 - `protocols/05-multi-model.md` - working across different models and agents
 - `protocols/06-tools-and-safety.md` - tool design, sandboxing, untrusted content
+
+## Related skills
+
+- [`project-audit`](https://github.com/engida32/project-audit-skill) - use it when the task is an audit,
+  cleanup, hardening, or open-source readiness review. It produces the findings and prioritized plan first;
+  bring that plan back here to run approved remediation as a resumable workflow.
