@@ -173,6 +173,10 @@ A brief should record the goal, who it is for, observable success signals, non-g
 
 Any profile can be sent back to research by the verifier when the failure is missing knowledge.
 
+## Related skills
+
+[`project-audit-skill`](https://github.com/engida32/project-audit-skill) provides a report-first repository audit: evidence-backed findings and a prioritized plan, with no file changes until you approve them. Use `project-audit` for the audit report and plan, then use this workflow kit for approved remediation when the work spans multiple sessions.
+
 ## Eval
 
 ```bash
