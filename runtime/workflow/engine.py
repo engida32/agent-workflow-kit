@@ -13,6 +13,7 @@ import sys
 import time
 from collections import Counter
 
+from . import cost
 from .providers import Disruption, Fatal
 from .state import StateError, Store
 from .tools import DENY, SPECS, Tools, iter_files, scrubbed_env
@@ -185,7 +186,7 @@ class Engine:
             self._state = {"schema_version": STATE_SCHEMA, "task": task, "profile": profile, "stage": "route",
                            "status": "running", "reason": "", "round": 1, "tokens": 0, "elapsed": 0.0,
                            "best_failed": None, "stale": 0, "feedback": "", "failed": [], "limits": lim,
-                           "criteria_pending": False, "providers_used": {}}
+                           "criteria_pending": False, "providers_used": {}, "spend": {}}
             if criteria:
                 self.store.write("criteria.json", normalize_criteria(criteria))
             self.store.write("progress.md", f"# Progress\nTask: {task}\n", text=True)
@@ -211,6 +212,7 @@ class Engine:
             raise
         self.state["tokens"] += r.tokens
         self.state["providers_used"][role] = self.P[role].last_provider
+        cost.record(self.state, role, self.P[role].last_provider, r.tokens)
         return r
 
     def ask_json(self, role, system, user):
