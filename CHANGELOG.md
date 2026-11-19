@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- `workflow status <workspace> --cost` reports tokens per role, the provider that answered each
+  role, and dollars when the config declares `pricing.<provider>.usd_per_mtok`. An undeclared rate
+  is reported as `null` and listed under `unpriced` instead of being counted as free.
+- Eval rows now carry `cost_usd` next to status, rounds, tokens and elapsed time.
+
 ## [Unreleased]
 
 ### Added

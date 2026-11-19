@@ -7,7 +7,7 @@ import site
 import sys
 import sysconfig
 
-from . import __version__
+from . import __version__, cost
 from .engine import Engine, TERMINAL
 from .providers import Resilient, build_provider
 from .state import Locked, Store
@@ -108,6 +108,8 @@ def main(argv=None):
     common(s)
     t = sub.add_parser("status")
     t.add_argument("workspace")
+    t.add_argument("--cost", action="store_true", help="add per-stage tokens and cost from state.json")
+    t.add_argument("--config", help="config with provider pricing, used by --cost")
     e = sub.add_parser("eval", help="run an eval set; resumable, finished tasks are skipped")
     e.add_argument("file")
     e.add_argument("--out", default="eval_runs")
@@ -120,7 +122,11 @@ def main(argv=None):
             if st is not None and not isinstance(st, dict):
                 raise ValueError("state.json is not a JSON object")
             keys = ("status", "reason", "stage", "round", "profile", "tokens", "elapsed", "failed")
-            print(json.dumps({k: st.get(k) for k in keys} if st else {"status": "no run here"}, indent=1))
+            out = {k: st.get(k) for k in keys} if st else {"status": "no run here"}
+            if a.cost and st is not None:
+                cfg = load_json(a.config) if a.config else {}
+                out["cost"] = cost.summarize(st, cfg if isinstance(cfg, dict) else {})
+            print(json.dumps(out, indent=1))
             return 0
         if a.cmd == "run":
             crit = load_json(a.criteria) if a.criteria else None
@@ -156,9 +162,14 @@ def run_eval(a):
         if not finished:
             eng.start(t["task"], t.get("profile"), t["criteria"])
         s = eng.summary() if finished else eng.run()
-        rows.append({"id": t["id"], **{k: s[k] for k in ("status", "round", "tokens", "elapsed", "failed")}})
-        print(f"[{t['id']}] {s['status']} rounds={s['round']} tokens={s['tokens']}", flush=True)
+        spend = cost.summarize(eng.state or {}, eng.cfg)
+        rows.append({"id": t["id"], "cost_usd": spend["cost_usd"],
+                     **{k: s[k] for k in ("status", "round", "tokens", "elapsed", "failed")}})
+        print(f"[{t['id']}] {s['status']} rounds={s['round']} tokens={s['tokens']} "
+              f"cost={spend['cost_usd']}", flush=True)
         (out / "results.json").write_text(json.dumps(rows, indent=1))
     done = sum(r["status"] == "passed" for r in rows)
-    print(f"completed {done}/{len(rows)}; total tokens {sum(r['tokens'] for r in rows)}; results in {out}/results.json")
+    total_cost = sum(r["cost_usd"] for r in rows) if all(r["cost_usd"] is not None for r in rows) else None
+    print(f"completed {done}/{len(rows)}; total tokens {sum(r['tokens'] for r in rows)}; "
+          f"total cost {total_cost}; results in {out}/results.json")
     return 0 if done == len(rows) else 2

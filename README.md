@@ -119,6 +119,7 @@ If the run is interrupted, rate limited, or the provider goes down:
 ```bash
 workflow resume workspace --config runtime/config.json
 workflow status workspace
+workflow status workspace --cost --config runtime/config.json
 ```
 
 Without installing, run `python -m workflow` from `runtime/` instead. From that directory use `--config config.json` and `-w ../workspace`.
@@ -144,6 +145,7 @@ Useful options:
 - `resume --retry-failed` retries a run that ended in `failed` after you fix the cause.
 - Set `"outage_wait_seconds": 3600` in the config's `resilience` block to keep probing during a long outage before pausing.
 - Set `"verifier_votes": 3` in the config's `limits` block to control independent rubric ballots. One vote disables majority voting.
+- `status --cost` adds per-role tokens and dollars read from the run state and the config's `pricing` block.
 
 > **Review executable criteria before running them.** `--approve auto` executes model-written shell commands. The deny list catches destructive patterns, but it is not a sandbox. An approved command runs with your privileges.
 
@@ -178,6 +180,34 @@ Any profile can be sent back to research by the verifier when the failure is mis
 
 [`project-audit-skill`](https://github.com/engida32/project-audit-skill) provides a report-first repository audit: evidence-backed findings and a prioritized plan, with no file changes until you approve them. Use `project-audit` for the audit report and plan, then use this workflow kit for approved remediation when the work spans multiple sessions.
 
+## Cost accounting
+
+Every model call records the role, the provider that answered, and the token count in
+`.wf/state.json`. `status --cost` prints that as a per-stage table:
+
+```json
+{
+ "tokens": 41230,
+ "stages": {
+  "planner":  {"calls": 4, "tokens": 18300, "providers": {"claude": 18300}, "cost_usd": 0.0549},
+  "verifier": {"calls": 9, "tokens": 22930, "providers": {"claude": 22930}, "cost_usd": 0.06879}
+ },
+ "cost_usd": 0.12369,
+ "unpriced": []
+}
+```
+
+Dollars come from a `pricing` block in the same config that names the providers:
+
+```json
+"pricing": {"claude": {"usd_per_mtok": 3.0}}
+```
+
+The rate is one flat number per million tokens because the adapters count a single total per
+reply, not a prompt/completion split. A provider with no declared rate reports
+`cost_usd: null` and appears in `unpriced`; the run total stays `null` rather than understating
+spend. Command-line agent providers report no usage at all, so their tokens read `0`.
+
 ## Eval
 
 ```bash
@@ -188,7 +218,7 @@ workflow eval eval/eval_tasks.json \
   --approve auto
 ```
 
-Ten tasks across the four profiles. Finished tasks are skipped when you rerun. `--approve auto` executes model-written commands, so run the eval in a container.
+Ten tasks across the four profiles. Finished tasks are skipped when you rerun. `--approve auto` executes model-written commands, so run the eval in a container. Each row in `results.json` carries `tokens` and `cost_usd` alongside status, rounds, elapsed time, and the failed criteria.
 
 ## Tests
 
@@ -233,6 +263,7 @@ Sources:
 - Locking uses `os.kill`, so the runtime targets Linux and macOS.
 - `fetch_url` blocks private addresses at lookup time but does not stop a redirect from a public host to a private one.
 - Rubric criteria are only as reliable as the judge. Prefer commands.
+- Cost is only as good as the token counts the provider returns, and a command-line agent provider returns none. A `cost_usd` of `null` means unknown, not free.
 - A run that ends in `failed` keeps its state for inspection. Fix the cause, then run `resume --retry-failed`.
 - Executable criteria are commands. They follow `--approve`, and the deny list applies, but an approved command still runs with your privileges. Review criteria before a run.
 - `--criteria` skips the interactive criteria review, even with `--confirm ask`.
