@@ -7,6 +7,7 @@
 [![CI](https://github.com/engida32/agent-workflow-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/engida32/agent-workflow-kit/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776AB.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![Release](https://img.shields.io/github/v/release/engida32/agent-workflow-kit?label=release)
 
 Agent Workflow Kit is a small, resumable workflow for tasks that need more than one model turn: coding, research, design, evaluation, or anything else where a single prompt is not enough.
 
